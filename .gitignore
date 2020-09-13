@@ -1,0 +1,7 @@
+# Compile
+*.pyc
+
+# python virtual environment
+venv*
+
+

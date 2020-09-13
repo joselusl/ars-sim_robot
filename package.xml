@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>ars_sim_robot</name>
+  <version>0.0.0</version>
+  <description>The ars_sim_robot</description>
+
+
+  <maintainer email="joseluis.sanlop@gmail.com">Jose Luis Sanchez-Lopez</maintainer>
+  <author email="joseluis.sanlop@gmail.com">Jose Luis Sanchez-Lopez</author>
+
+  <license>BSD</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>rospy</depend>
+  <depend>std_msgs</depend>
+  <depend>sensor_msgs</depend>
+
+  <!-- exec dependencies -->
+  <exec_depend>python-numpy</exec_depend>
+  <exec_depend>python-nvector</exec_depend>
+  <exec_depend>python-rospkg</exec_depend>
+
+  <export>
+  </export>
+
+</package>
