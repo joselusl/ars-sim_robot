@@ -25,7 +25,7 @@ def main():
     ars_sim_robot_ros.run()
   except rospy.ROSInterruptException:
     pass
-  
+
 
   return 0
 

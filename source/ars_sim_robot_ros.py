@@ -178,7 +178,7 @@ class ArsSimRobotRos:
     # End
     return
 
-  
+    
   def robotVelCmdCallback(self, robot_vel_cmd_msg):
 
     robot_velo_lin_cmd = np.zeros((3,1), dtype=float)
