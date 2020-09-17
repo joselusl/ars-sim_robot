@@ -158,12 +158,16 @@ class ArsSimRobotRos:
     # Robot
     self.robot.simRobot(time_stamp_current)
     
-    
-
     # End
     return
 
   def pubStepTimerCallback(self, timer_msg):
+
+    # Get time
+    time_stamp_current = rospy.Time.now()
+
+    # Robot
+    self.robot.simRobot(time_stamp_current)
 
     # Publish
     # Pose
@@ -218,9 +222,6 @@ class ArsSimRobotRos:
     robot_pose_msg.pose.orientation.y = robot_atti_quat[2]
     robot_pose_msg.pose.orientation.z = robot_atti_quat[3]
 
-    self.robot_pose_pub.publish(robot_pose_msg)
-
-
     # Tf2
     tf2__msg = geometry_msgs.msg.TransformStamped()
 
@@ -236,6 +237,9 @@ class ArsSimRobotRos:
     tf2__msg.transform.rotation.x = robot_atti_quat[1]
     tf2__msg.transform.rotation.y = robot_atti_quat[2]
     tf2__msg.transform.rotation.z = robot_atti_quat[3]
+
+
+    self.robot_pose_pub.publish(robot_pose_msg)
 
     self.tf2_broadcaster.sendTransform(tf2__msg)
 
@@ -270,8 +274,6 @@ class ArsSimRobotRos:
     robot_velo_robot_msg.twist.angular.y = robot_velo_ang_robot[1]
     robot_velo_robot_msg.twist.angular.z = robot_velo_ang_robot[2]
 
-    self.robot_vel_robot_pub.publish(robot_velo_robot_msg)
-    
     
     #
     robot_velo_world_msg = TwistStamped()
@@ -286,6 +288,10 @@ class ArsSimRobotRos:
     robot_velo_world_msg.twist.angular.x = robot_velo_ang_world[0]
     robot_velo_world_msg.twist.angular.y = robot_velo_ang_world[1]
     robot_velo_world_msg.twist.angular.z = robot_velo_ang_world[2]
+
+
+
+    self.robot_vel_robot_pub.publish(robot_velo_robot_msg)
 
     self.robot_vel_world_pub.publish(robot_velo_world_msg)
 
