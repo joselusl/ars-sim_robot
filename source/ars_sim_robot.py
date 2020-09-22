@@ -25,7 +25,7 @@ class ArsSimRobot:
   #
   # m/s
   robot_velo_lin_cmd = None
-  # deg/s
+  # rad/s
   robot_velo_ang_cmd = None
 
   #
@@ -34,7 +34,7 @@ class ArsSimRobot:
 
   # m/s
   robot_velo_lin_cmd_sat = [[-5.0, 5.0], [-5.0, 5.0], [-5.0, 5.0]]
-  # deg/s
+  # rad/s
   robot_velo_ang_cmd_sat = [[0.0, 0.0], [0.0, 0.0], [-5.0, 5.0]]
 
   #
