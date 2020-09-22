@@ -35,7 +35,7 @@ class ArsSimRobot:
   # m/s
   robot_velo_lin_cmd_sat = [[-5.0, 5.0], [-5.0, 5.0], [-5.0, 5.0]]
   # deg/s
-  robot_velo_ang_cmd_sat = [[0.0, 0.0], [0.0, 0.0], [-100.0, 100.0]]
+  robot_velo_ang_cmd_sat = [[0.0, 0.0], [0.0, 0.0], [-5.0, 5.0]]
 
   #
   robot_posi = None
@@ -50,7 +50,9 @@ class ArsSimRobot:
   robot_dyn_const = { 'vx': {'k': 1.0, 'T': 0.8355}, 
   'vy': {'k': 1.0, 'T': 0.7701},
   'vz': {'k': 1.0, 'T': 0.5013},
-  'wz': {'k': math.pi/180.0, 'T': 0.5142} }
+  #'wz': {'k': math.pi/180.0, 'T': 0.5142}
+  'wz': {'k': 1.0, 'T': 0.5142} 
+  }
 
   #
   mass_quadrotor=2.0
