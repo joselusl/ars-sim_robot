@@ -14,6 +14,9 @@ import rospy
 import tf_conversions as tf
 
 
+#
+import ars_lib_helpers
+
 
 
 
@@ -65,24 +68,16 @@ class ArsSimRobot:
 
   def __init__(self):
 
-    self.robot_velo_lin_cmd = np.zeros((3,1), dtype=float)
-    self.robot_velo_ang_cmd = np.zeros((3,1), dtype=float)
+    self.robot_velo_lin_cmd = np.zeros((3,), dtype=float)
+    self.robot_velo_ang_cmd = np.zeros((3,), dtype=float)
 
-    self.robot_posi = np.zeros((3,1), dtype=float)
-    self.robot_atti_quat = self.normalize(np.array([1.0, 0.0, 0.0, 0.0]))
-    #self.robot_atti_quat = self.normalize(np.array([0.707, 0.0, 0.0, 0.707]))
-    self.robot_velo_lin_robot = np.zeros((3,1), dtype=float)
-    self.robot_velo_ang_robot = np.zeros((3,1), dtype=float)
+    self.robot_posi = np.zeros((3,), dtype=float)
+    self.robot_atti_quat = ars_lib_helpers.Quaternion.zerosQuat()
+
+    self.robot_velo_lin_robot = np.zeros((3,), dtype=float)
+    self.robot_velo_ang_robot = np.zeros((3,), dtype=float)
 
     return
-
-
-  @staticmethod
-  def normalize(v):
-    norm = np.linalg.norm(v)
-    if norm == 0:
-      return v
-    return v / norm
 
 
   def setTimeStamp(self, time_stamp_ros):
@@ -162,7 +157,7 @@ class ArsSimRobot:
 
 
   def getRobotVeloLinWorld(self):
-    return self.convertVelLinFromRobotToWorld(self.robot_velo_lin_robot, self.robot_atti_quat)
+    return ars_lib_helpers.Conversions.convertVelLinFromRobotToWorld(self.robot_velo_lin_robot, self.robot_atti_quat, False)
 
 
   def getRobotVeloAngRobot(self):
@@ -170,60 +165,7 @@ class ArsSimRobot:
 
 
   def getRobotVeloAngWorld(self):
-    return self.convertVelAngFromRobotToWorld(self.robot_velo_ang_robot, self.robot_atti_quat)
-
-
-  @staticmethod
-  def convertVelLinFromRobotToWorld(robot_velo_lin_robot, robot_atti_quat):
-
-    robot_atti_quat_tf = np.roll(robot_atti_quat, -1)
-    #print(robot_atti_quat_tf)
-    robot_atti_ang = tf.transformations.euler_from_quaternion(robot_atti_quat_tf, axes='sxyz')
-    #print('robot_atti_ang')
-    #print(robot_atti_ang)
-    robot_atti_ang_yaw = robot_atti_ang[2]
-    #print('robot_atti_ang_yaw')
-    #print(robot_atti_ang_yaw)
-
-
-    robot_velo_lin_world = np.zeros((3,1), dtype=float)
-
-    robot_velo_lin_world[0] = math.cos(robot_atti_ang_yaw)*robot_velo_lin_robot[0]-math.sin(robot_atti_ang_yaw)*robot_velo_lin_robot[1]
-    robot_velo_lin_world[1] = math.sin(robot_atti_ang_yaw)*robot_velo_lin_robot[0]+math.cos(robot_atti_ang_yaw)*robot_velo_lin_robot[1]
-    robot_velo_lin_world[2] = robot_velo_lin_robot[2]
-
-    return robot_velo_lin_world
-
-  @staticmethod
-  def convertVelAngFromRobotToWorld(robot_velo_ang_robot, robot_atti_quat):
-
-    return robot_velo_ang_robot
-
-  @staticmethod
-  def getSimplifiedQuatRobotAtti(robot_atti_quat):
-
-    robot_atti_quat_tf = np.roll(robot_atti_quat, -1)
-    #print(robot_atti_quat_tf)
-    robot_atti_ang = tf.transformations.euler_from_quaternion(robot_atti_quat_tf, axes='sxyz')
-    #print('robot_atti_ang')
-    #print(robot_atti_ang)
-    robot_atti_ang_yaw = robot_atti_ang[2]
-    #print('robot_atti_ang_yaw')
-    #print(robot_atti_ang_yaw)
-
-    robot_atti_hor_quat_tf = tf.transformations.quaternion_from_euler(0, 0, robot_atti_ang_yaw, axes='sxyz')
-    robot_atti_hor_quat = np.roll(robot_atti_hor_quat_tf, 1)
-    #print('robot_atti_hor_quat')
-    #print(robot_atti_hor_quat)
-
-    robot_atti_quat_simp = np.zeros((2,1), dtype=float)
-    robot_atti_quat_simp[0] = robot_atti_hor_quat[0]
-    robot_atti_quat_simp[1] = robot_atti_hor_quat[3]
-    #print('robot_atti_quat_simp')
-    #print(robot_atti_quat_simp)
-
-
-    return robot_atti_quat_simp
+    return ars_lib_helpers.Conversions.convertVelAngFromRobotToWorld(self.robot_velo_ang_robot, self.robot_atti_quat, False)
 
 
   def simRobot(self, time_stamp_ros):
@@ -237,21 +179,21 @@ class ArsSimRobot:
     # Calculations
 
     #
-    robot_atti_quat_simp = self.getSimplifiedQuatRobotAtti(self.robot_atti_quat)
+    robot_atti_quat_simp = ars_lib_helpers.Quaternion.getSimplifiedQuatRobotAtti(self.robot_atti_quat)
 
     #
-    robot_velo_lin_world = self.convertVelLinFromRobotToWorld(self.robot_velo_lin_robot, self.robot_atti_quat)
+    robot_velo_lin_world = ars_lib_helpers.Conversions.convertVelLinFromRobotToWorld(self.robot_velo_lin_robot, self.robot_atti_quat, False)
 
 
     # Posit
-    new_robot_posi = np.zeros((3,1), dtype=float)
+    new_robot_posi = np.zeros((3,), dtype=float)
     new_robot_posi[0] = self.robot_posi[0] + delta_time * robot_velo_lin_world[0]
     new_robot_posi[1] = self.robot_posi[1] + delta_time * robot_velo_lin_world[1]
     new_robot_posi[2] = self.robot_posi[2] + delta_time * robot_velo_lin_world[2]
     #print(new_robot_posi)
 
     # Velo lin
-    robot_accel_lin_robot = np.zeros((3,1), dtype=float)
+    robot_accel_lin_robot = np.zeros((3,), dtype=float)
     robot_accel_lin_robot[0] = 1/self.robot_dyn_const['vx']['T']*(-self.robot_velo_lin_robot[0]+self.robot_dyn_const['vx']['k']*self.robot_velo_lin_cmd[0])
     robot_accel_lin_robot[1] = 1/self.robot_dyn_const['vy']['T']*(-self.robot_velo_lin_robot[1]+self.robot_dyn_const['vy']['k']*self.robot_velo_lin_cmd[1])
     robot_accel_lin_robot[2] = 1/self.robot_dyn_const['vz']['T']*(-self.robot_velo_lin_robot[2]+self.robot_dyn_const['vz']['k']*self.robot_velo_lin_cmd[2])
@@ -260,7 +202,7 @@ class ArsSimRobot:
     #print(robot_accel_lin_robot)
 
 
-    new_robot_velo_lin_robot = np.zeros((3,1), dtype=float)
+    new_robot_velo_lin_robot = np.zeros((3,), dtype=float)
     new_robot_velo_lin_robot[0] = self.robot_velo_lin_robot[0] + delta_time * robot_accel_lin_robot[0]
     new_robot_velo_lin_robot[1] = self.robot_velo_lin_robot[1] + delta_time * robot_accel_lin_robot[1]
     new_robot_velo_lin_robot[2] = self.robot_velo_lin_robot[2] + delta_time * robot_accel_lin_robot[2]

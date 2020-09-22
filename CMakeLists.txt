@@ -13,7 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 catkin_package(
   DEPENDS
-  CATKIN_DEPENDS rospy std_msgs sensor_msgs geometry_msgs tf_conversions tf2_ros
+  CATKIN_DEPENDS rospy std_msgs sensor_msgs geometry_msgs tf_conversions tf2_ros ars_lib_helpers
   INCLUDE_DIRS
   LIBRARIES
 )

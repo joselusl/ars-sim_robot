@@ -32,6 +32,10 @@ import tf2_ros
 from ars_sim_robot import *
 
 
+#
+import ars_lib_helpers
+
+
 
 
 
@@ -103,8 +107,12 @@ class ArsSimRobotRos:
     #
     self.robot.setTimeStamp(rospy.Time.now())
 
-    #
+
+    # Init state
     self.robot.robot_posi = [0.0, 0.0, 1.0]
+    self.robot.robot_atti_quat = ars_lib_helpers.Quaternion.zerosQuat()
+    self.robot.robot_velo_lin_robot = [0.0, 0.0, 0.0]
+    self.robot.robot_velo_ang_robot = [0.0, 0.0, 0.0]
 
     
     # End
@@ -181,12 +189,12 @@ class ArsSimRobotRos:
     
   def robotVelCmdCallback(self, robot_vel_cmd_msg):
 
-    robot_velo_lin_cmd = np.zeros((3,1), dtype=float)
+    robot_velo_lin_cmd = np.zeros((3,), dtype=float)
     robot_velo_lin_cmd[0] = robot_vel_cmd_msg.linear.x
     robot_velo_lin_cmd[1] = robot_vel_cmd_msg.linear.y
     robot_velo_lin_cmd[2] = robot_vel_cmd_msg.linear.z
 
-    robot_velo_ang_cmd = np.zeros((3,1), dtype=float)
+    robot_velo_ang_cmd = np.zeros((3,), dtype=float)
     robot_velo_ang_cmd[0] = robot_vel_cmd_msg.angular.x
     robot_velo_ang_cmd[1] = robot_vel_cmd_msg.angular.y
     robot_velo_ang_cmd[2] = robot_vel_cmd_msg.angular.z
