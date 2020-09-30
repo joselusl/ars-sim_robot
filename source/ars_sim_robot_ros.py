@@ -14,6 +14,8 @@ import rospy
 
 import rospkg
 
+import std_msgs.msg
+from std_msgs.msg import Bool
 from std_msgs.msg import Header
 
 import geometry_msgs.msg
@@ -72,6 +74,9 @@ class ArsSimRobotRos:
   robot_vel_world_pub = None
   robot_vel_robot_pub = None
 
+  # Robot collision subscriber
+  robot_collision_sub = None
+
   # tf2 broadcaster
   tf2_broadcaster = None
 
@@ -125,6 +130,8 @@ class ArsSimRobotRos:
     # Subcribers
     # Robot cmd subscriber
     self.robot_vel_cmd_sub = rospy.Subscriber('robot_cmd', Twist, self.robotVelCmdCallback)
+    # Robot collision
+    self.robot_collision_sub = rospy.Subscriber('robot_collision', Bool, self.robotCollisionCallback)
 
 
     # Publishers
@@ -200,6 +207,13 @@ class ArsSimRobotRos:
     robot_velo_ang_cmd[2] = robot_vel_cmd_msg.angular.z
 
     self.robot.setRobotVelCmd(robot_velo_lin_cmd, robot_velo_ang_cmd)
+
+    return
+
+
+  def robotCollisionCallback(self, robot_collision_msg):
+
+    self.robot.flag_robot_collision = robot_collision_msg.data
 
     return
 

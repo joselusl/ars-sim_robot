@@ -26,6 +26,9 @@ class ArsSimRobot:
   time_stamp_ros = rospy.Time(0.0, 0.0)
 
   #
+  flag_robot_collision = False
+
+  #
   # m/s
   robot_velo_lin_cmd = None
   # rad/s
@@ -47,7 +50,7 @@ class ArsSimRobot:
   robot_velo_ang_robot = None
 
   #
-  flag_disp_pitch_roll = True
+  flag_disp_pitch_roll = False
   
   #
   robot_dyn_const = { 'vx': {'k': 1.0, 'T': 0.8355}, 
@@ -67,6 +70,8 @@ class ArsSimRobot:
   #########
 
   def __init__(self):
+
+    self.flag_robot_collision = False
 
     self.robot_velo_lin_cmd = np.zeros((3,), dtype=float)
     self.robot_velo_ang_cmd = np.zeros((3,), dtype=float)
@@ -185,87 +190,98 @@ class ArsSimRobot:
     robot_velo_lin_world = ars_lib_helpers.Conversions.convertVelLinFromRobotToWorld(self.robot_velo_lin_robot, self.robot_atti_quat, False)
 
 
-    # Posit
-    new_robot_posi = np.zeros((3,), dtype=float)
-    new_robot_posi[0] = self.robot_posi[0] + delta_time * robot_velo_lin_world[0]
-    new_robot_posi[1] = self.robot_posi[1] + delta_time * robot_velo_lin_world[1]
-    new_robot_posi[2] = self.robot_posi[2] + delta_time * robot_velo_lin_world[2]
-    #print(new_robot_posi)
+    if(self.flag_robot_collision):
 
-    # Velo lin
-    robot_accel_lin_robot = np.zeros((3,), dtype=float)
-    robot_accel_lin_robot[0] = 1/self.robot_dyn_const['vx']['T']*(-self.robot_velo_lin_robot[0]+self.robot_dyn_const['vx']['k']*self.robot_velo_lin_cmd[0])
-    robot_accel_lin_robot[1] = 1/self.robot_dyn_const['vy']['T']*(-self.robot_velo_lin_robot[1]+self.robot_dyn_const['vy']['k']*self.robot_velo_lin_cmd[1])
-    robot_accel_lin_robot[2] = 1/self.robot_dyn_const['vz']['T']*(-self.robot_velo_lin_robot[2]+self.robot_dyn_const['vz']['k']*self.robot_velo_lin_cmd[2])
+      # Update state
+      self.robot_posi = self.robot_posi
+      self.robot_velo_lin_robot = np.zeros((3,), dtype=float)
+      self.robot_atti_quat = self.robot_atti_quat
+      self.robot_velo_ang_robot = np.zeros((3,), dtype=float)
 
-    #print('robot_accel_lin_robot')
-    #print(robot_accel_lin_robot)
-
-
-    new_robot_velo_lin_robot = np.zeros((3,), dtype=float)
-    new_robot_velo_lin_robot[0] = self.robot_velo_lin_robot[0] + delta_time * robot_accel_lin_robot[0]
-    new_robot_velo_lin_robot[1] = self.robot_velo_lin_robot[1] + delta_time * robot_accel_lin_robot[1]
-    new_robot_velo_lin_robot[2] = self.robot_velo_lin_robot[2] + delta_time * robot_accel_lin_robot[2]
-    #print(new_robot_velo_lin_robot)
-
-    # Orientation
-    delta_rho = delta_time*self.robot_velo_ang_robot[2]
-    dq_simp_robot = np.zeros((2,1), dtype=float)
-    dq_simp_robot[0] = math.cos(0.5*delta_rho) # dqw
-    dq_simp_robot[1] = math.sin(0.5*delta_rho) # dqz
-
-    new_robot_atti_quat_simp = np.zeros((2,1), dtype=float)
-    new_robot_atti_quat_simp[0]=robot_atti_quat_simp[0]*dq_simp_robot[0] - robot_atti_quat_simp[1]*dq_simp_robot[1]
-    new_robot_atti_quat_simp[1]=robot_atti_quat_simp[0]*dq_simp_robot[1] + robot_atti_quat_simp[1]*dq_simp_robot[0]
-
-    # Yaw
-    new_robot_atti_ang_yaw = 2*math.atan2(new_robot_atti_quat_simp[1], new_robot_atti_quat_simp[0])
-
-    # Pitch and roll
-    if(self.flag_disp_pitch_roll):
-
-      # TODO fix??
-      new_robot_atti_ang_pitch = math.atan2( robot_accel_lin_robot[0]+self.aerodynamics_coef['x']*self.robot_velo_lin_robot[0]*self.robot_velo_lin_robot[0], robot_accel_lin_robot[2]+self.aerodynamics_coef['z']*self.robot_velo_lin_robot[2]*self.robot_velo_lin_robot[2]+self.gravity )
-      new_robot_atti_ang_roll  = math.atan2( robot_accel_lin_robot[0]+self.aerodynamics_coef['y']*self.robot_velo_lin_robot[1]*self.robot_velo_lin_robot[1], robot_accel_lin_robot[2]+self.aerodynamics_coef['z']*self.robot_velo_lin_robot[2]*self.robot_velo_lin_robot[2]+self.gravity )
-
-      sign_new_robot_atti_ang_pitch=0
-      if(self.robot_velo_lin_robot[0]>0):
-        sign_new_robot_atti_ang_pitch=1
-      else:
-        sign_new_robot_atti_ang_pitch=-1
-
-      sign_new_robot_atti_ang_roll=0
-      if(self.robot_velo_lin_robot[1]>0):
-        sign_new_robot_atti_ang_roll=1
-      else:
-        sign_new_robot_atti_ang_roll=-1
-
-      new_robot_atti_ang_pitch=sign_new_robot_atti_ang_pitch*new_robot_atti_ang_pitch
-      new_robot_atti_ang_roll=-sign_new_robot_atti_ang_roll*new_robot_atti_ang_roll
-
-      #print(new_robot_atti_ang_pitch)
-      #print(new_robot_atti_ang_roll)
 
     else:
-      new_robot_atti_ang_pitch = 0.0
-      new_robot_atti_ang_roll = 0.0
 
-    #
-    new_robot_atti_quat_tf = tf.transformations.quaternion_from_euler(new_robot_atti_ang_roll, new_robot_atti_ang_pitch, new_robot_atti_ang_yaw, axes='sxyz')
-    new_robot_atti_quat = np.roll(new_robot_atti_quat_tf, 1)
+      # Posit
+      new_robot_posi = np.zeros((3,), dtype=float)
+      new_robot_posi[0] = self.robot_posi[0] + delta_time * robot_velo_lin_world[0]
+      new_robot_posi[1] = self.robot_posi[1] + delta_time * robot_velo_lin_world[1]
+      new_robot_posi[2] = self.robot_posi[2] + delta_time * robot_velo_lin_world[2]
+      #print(new_robot_posi)
+
+      # Velo lin
+      robot_accel_lin_robot = np.zeros((3,), dtype=float)
+      robot_accel_lin_robot[0] = 1/self.robot_dyn_const['vx']['T']*(-self.robot_velo_lin_robot[0]+self.robot_dyn_const['vx']['k']*self.robot_velo_lin_cmd[0])
+      robot_accel_lin_robot[1] = 1/self.robot_dyn_const['vy']['T']*(-self.robot_velo_lin_robot[1]+self.robot_dyn_const['vy']['k']*self.robot_velo_lin_cmd[1])
+      robot_accel_lin_robot[2] = 1/self.robot_dyn_const['vz']['T']*(-self.robot_velo_lin_robot[2]+self.robot_dyn_const['vz']['k']*self.robot_velo_lin_cmd[2])
+
+      #print('robot_accel_lin_robot')
+      #print(robot_accel_lin_robot)
 
 
-    # Velo ang
-    new_robot_velo_ang_robot = np.zeros((3,1), dtype=float)
-    new_robot_velo_ang_robot[2] = self.robot_velo_ang_robot[2] + delta_time * ( 1/self.robot_dyn_const['wz']['T']*(-self.robot_velo_ang_robot[2]+self.robot_dyn_const['wz']['k']*self.robot_velo_ang_cmd[2]) )
-    #print(new_robot_velo_ang_robot)
+      new_robot_velo_lin_robot = np.zeros((3,), dtype=float)
+      new_robot_velo_lin_robot[0] = self.robot_velo_lin_robot[0] + delta_time * robot_accel_lin_robot[0]
+      new_robot_velo_lin_robot[1] = self.robot_velo_lin_robot[1] + delta_time * robot_accel_lin_robot[1]
+      new_robot_velo_lin_robot[2] = self.robot_velo_lin_robot[2] + delta_time * robot_accel_lin_robot[2]
+      #print(new_robot_velo_lin_robot)
+
+      # Orientation
+      delta_rho = delta_time*self.robot_velo_ang_robot[2]
+      dq_simp_robot = np.zeros((2,1), dtype=float)
+      dq_simp_robot[0] = math.cos(0.5*delta_rho) # dqw
+      dq_simp_robot[1] = math.sin(0.5*delta_rho) # dqz
+
+      new_robot_atti_quat_simp = np.zeros((2,1), dtype=float)
+      new_robot_atti_quat_simp[0]=robot_atti_quat_simp[0]*dq_simp_robot[0] - robot_atti_quat_simp[1]*dq_simp_robot[1]
+      new_robot_atti_quat_simp[1]=robot_atti_quat_simp[0]*dq_simp_robot[1] + robot_atti_quat_simp[1]*dq_simp_robot[0]
+
+      # Yaw
+      new_robot_atti_ang_yaw = 2*math.atan2(new_robot_atti_quat_simp[1], new_robot_atti_quat_simp[0])
+
+      # Pitch and roll
+      if(self.flag_disp_pitch_roll):
+
+        # TODO fix??
+        new_robot_atti_ang_pitch = math.atan2( robot_accel_lin_robot[0]+self.aerodynamics_coef['x']*self.robot_velo_lin_robot[0]*self.robot_velo_lin_robot[0], robot_accel_lin_robot[2]+self.aerodynamics_coef['z']*self.robot_velo_lin_robot[2]*self.robot_velo_lin_robot[2]+self.gravity )
+        new_robot_atti_ang_roll  = math.atan2( robot_accel_lin_robot[0]+self.aerodynamics_coef['y']*self.robot_velo_lin_robot[1]*self.robot_velo_lin_robot[1], robot_accel_lin_robot[2]+self.aerodynamics_coef['z']*self.robot_velo_lin_robot[2]*self.robot_velo_lin_robot[2]+self.gravity )
+
+        sign_new_robot_atti_ang_pitch=0
+        if(self.robot_velo_lin_robot[0]>0):
+          sign_new_robot_atti_ang_pitch=1
+        else:
+          sign_new_robot_atti_ang_pitch=-1
+
+        sign_new_robot_atti_ang_roll=0
+        if(self.robot_velo_lin_robot[1]>0):
+          sign_new_robot_atti_ang_roll=1
+        else:
+          sign_new_robot_atti_ang_roll=-1
+
+        new_robot_atti_ang_pitch=sign_new_robot_atti_ang_pitch*new_robot_atti_ang_pitch
+        new_robot_atti_ang_roll=-sign_new_robot_atti_ang_roll*new_robot_atti_ang_roll
+
+        #print(new_robot_atti_ang_pitch)
+        #print(new_robot_atti_ang_roll)
+
+      else:
+        new_robot_atti_ang_pitch = 0.0
+        new_robot_atti_ang_roll = 0.0
+
+      #
+      new_robot_atti_quat_tf = tf.transformations.quaternion_from_euler(new_robot_atti_ang_roll, new_robot_atti_ang_pitch, new_robot_atti_ang_yaw, axes='sxyz')
+      new_robot_atti_quat = np.roll(new_robot_atti_quat_tf, 1)
 
 
-    # Update state
-    self.robot_posi = new_robot_posi
-    self.robot_velo_lin_robot = new_robot_velo_lin_robot
-    self.robot_atti_quat = new_robot_atti_quat
-    self.robot_velo_ang_robot = new_robot_velo_ang_robot
+      # Velo ang
+      new_robot_velo_ang_robot = np.zeros((3,1), dtype=float)
+      new_robot_velo_ang_robot[2] = self.robot_velo_ang_robot[2] + delta_time * ( 1/self.robot_dyn_const['wz']['T']*(-self.robot_velo_ang_robot[2]+self.robot_dyn_const['wz']['k']*self.robot_velo_ang_cmd[2]) )
+      #print(new_robot_velo_ang_robot)
+
+
+      # Update state
+      self.robot_posi = new_robot_posi
+      self.robot_velo_lin_robot = new_robot_velo_lin_robot
+      self.robot_atti_quat = new_robot_atti_quat
+      self.robot_velo_ang_robot = new_robot_velo_ang_robot
 
 
     # Update timestamp
