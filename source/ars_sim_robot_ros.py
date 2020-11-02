@@ -19,9 +19,12 @@ from std_msgs.msg import Bool
 from std_msgs.msg import Header
 
 import geometry_msgs.msg
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import Pose
 from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import Twist
 from geometry_msgs.msg import TwistStamped
+from geometry_msgs.msg import Accel
+from geometry_msgs.msg import AccelStamped
 
 import tf_conversions
 
@@ -54,13 +57,13 @@ class ArsSimRobotRos:
 
   # Sim step 
   # time step
-  sim_step_time = 0.02
+  sim_step_time = 0.01
   # Timer
   sim_step_timer = None
 
   # Pub timer
   # time step
-  pub_step_time = 0.05
+  pub_step_time = 0.02
   # Timer
   pub_step_timer = None
 
@@ -73,6 +76,10 @@ class ArsSimRobotRos:
   # Robot velocity publisher
   robot_vel_world_pub = None
   robot_vel_robot_pub = None
+
+  # Robot acceleration publisher
+  robot_acc_world_pub = None
+  robot_acc_robot_pub = None
 
   # Robot collision subscriber
   robot_collision_sub = None
@@ -141,6 +148,10 @@ class ArsSimRobotRos:
     self.robot_vel_world_pub = rospy.Publisher('robot_velocity_world', TwistStamped, queue_size=1)
     #
     self.robot_vel_robot_pub = rospy.Publisher('robot_velocity_robot', TwistStamped, queue_size=1)
+    #
+    self.robot_acc_world_pub = rospy.Publisher('robot_acceleration_world', AccelStamped, queue_size=1)
+    #
+    self.robot_acc_robot_pub = rospy.Publisher('robot_acceleration_robot', AccelStamped, queue_size=1)
 
 
     # Tf2 broadcasters
@@ -189,6 +200,8 @@ class ArsSimRobotRos:
     self.robotPosePub()
     # Velocity
     self.robotVelPub()
+    # Acceleration
+    self.robotAccPub()
 
     # End
     return
@@ -316,6 +329,57 @@ class ArsSimRobotRos:
     self.robot_vel_robot_pub.publish(robot_velo_robot_msg)
 
     self.robot_vel_world_pub.publish(robot_velo_world_msg)
+
+    #
+    return
+
+
+  def robotAccPub(self):
+
+    #
+    time_stamp_current = self.robot.getTimeStamp()
+
+    robot_acce_lin_robot = self.robot.getRobotAcceLinRobot()
+    robot_acce_ang_robot = self.robot.getRobotAcceAngRobot()
+
+    robot_acce_lin_world = self.robot.getRobotAcceLinWorld()
+    robot_acce_ang_world = self.robot.getRobotAcceAngWorld()
+
+
+    #
+    robot_acce_robot_msg = AccelStamped()
+
+    robot_acce_robot_msg.header.stamp = time_stamp_current
+    robot_acce_robot_msg.header.frame_id = self.robot_frame
+
+    robot_acce_robot_msg.accel.linear.x = robot_acce_lin_robot[0]
+    robot_acce_robot_msg.accel.linear.y = robot_acce_lin_robot[1]
+    robot_acce_robot_msg.accel.linear.z = robot_acce_lin_robot[2]
+
+    robot_acce_robot_msg.accel.angular.x = robot_acce_ang_robot[0]
+    robot_acce_robot_msg.accel.angular.y = robot_acce_ang_robot[1]
+    robot_acce_robot_msg.accel.angular.z = robot_acce_ang_robot[2]
+
+    
+    #
+    robot_acce_world_msg = AccelStamped()
+
+    robot_acce_world_msg.header.stamp = time_stamp_current
+    robot_acce_world_msg.header.frame_id = self.world_frame
+
+    robot_acce_world_msg.accel.linear.x = robot_acce_lin_world[0]
+    robot_acce_world_msg.accel.linear.y = robot_acce_lin_world[1]
+    robot_acce_world_msg.accel.linear.z = robot_acce_lin_world[2]
+
+    robot_acce_world_msg.accel.angular.x = robot_acce_ang_world[0]
+    robot_acce_world_msg.accel.angular.y = robot_acce_ang_world[1]
+    robot_acce_world_msg.accel.angular.z = robot_acce_ang_world[2]
+
+
+
+    self.robot_acc_robot_pub.publish(robot_acce_robot_msg)
+
+    self.robot_acc_world_pub.publish(robot_acce_world_msg)
 
     #
     return
