@@ -227,7 +227,6 @@ class ArsSimRobot:
     # Delta time
     delta_time_ros = time_stamp_ros - self.time_stamp_ros
     delta_time = delta_time_ros.to_sec()
-    #print(delta_time)
 
 
     # Calculations
@@ -270,15 +269,16 @@ class ArsSimRobot:
       new_robot_velo_lin_robot[1] = self.robot_velo_lin_robot[1] + delta_time * robot_accel_lin_robot[1]
       new_robot_velo_lin_robot[2] = self.robot_velo_lin_robot[2] + delta_time * robot_accel_lin_robot[2]
 
+
       # Orientation
+      
+      #
       delta_rho = delta_time*self.robot_velo_ang_robot[2]
       dq_simp_robot = np.zeros((2,1), dtype=float)
       dq_simp_robot[0] = math.cos(0.5*delta_rho) # dqw
       dq_simp_robot[1] = math.sin(0.5*delta_rho) # dqz
-
+      #
       new_robot_atti_quat_simp = np.zeros((2,1), dtype=float)
-      #new_robot_atti_quat_simp[0]=robot_atti_quat_simp[0]*dq_simp_robot[0] - robot_atti_quat_simp[1]*dq_simp_robot[1]
-      #new_robot_atti_quat_simp[1]=robot_atti_quat_simp[0]*dq_simp_robot[1] + robot_atti_quat_simp[1]*dq_simp_robot[0]
       new_robot_atti_quat_simp = ars_lib_helpers.Quaternion.quatSimpProd(robot_atti_quat_simp, dq_simp_robot)
 
 
