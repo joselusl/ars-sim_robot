@@ -69,6 +69,7 @@ class ArsSimRobotRos:
 
   # Robot command
   robot_vel_cmd_sub = None
+  robot_vel_cmd_stamped_sub = None
 
   # Robot pose publisher
   robot_pose_pub = None
@@ -137,6 +138,8 @@ class ArsSimRobotRos:
     # Subcribers
     # Robot cmd subscriber
     self.robot_vel_cmd_sub = rospy.Subscriber('robot_cmd', Twist, self.robotVelCmdCallback)
+    # Robot cmd stamped subscriber
+    self.robot_vel_cmd_stamped_sub = rospy.Subscriber('robot_cmd_stamped', TwistStamped, self.robotVelCmdStampedCallback)
     # Robot collision
     self.robot_collision_sub = rospy.Subscriber('robot_collision', Bool, self.robotCollisionCallback)
 
@@ -218,6 +221,23 @@ class ArsSimRobotRos:
     robot_velo_ang_cmd[0] = robot_vel_cmd_msg.angular.x
     robot_velo_ang_cmd[1] = robot_vel_cmd_msg.angular.y
     robot_velo_ang_cmd[2] = robot_vel_cmd_msg.angular.z
+
+    self.robot.setRobotVelCmd(robot_velo_lin_cmd, robot_velo_ang_cmd)
+
+    return
+
+
+  def robotVelCmdStampedCallback(self, robot_vel_cmd_stamped_msg):
+
+    robot_velo_lin_cmd = np.zeros((3,), dtype=float)
+    robot_velo_lin_cmd[0] = robot_vel_cmd_stamped_msg.twist.linear.x
+    robot_velo_lin_cmd[1] = robot_vel_cmd_stamped_msg.twist.linear.y
+    robot_velo_lin_cmd[2] = robot_vel_cmd_stamped_msg.twist.linear.z
+
+    robot_velo_ang_cmd = np.zeros((3,), dtype=float)
+    robot_velo_ang_cmd[0] = robot_vel_cmd_stamped_msg.twist.angular.x
+    robot_velo_ang_cmd[1] = robot_vel_cmd_stamped_msg.twist.angular.y
+    robot_velo_ang_cmd[2] = robot_vel_cmd_stamped_msg.twist.angular.z
 
     self.robot.setRobotVelCmd(robot_velo_lin_cmd, robot_velo_ang_cmd)
 
