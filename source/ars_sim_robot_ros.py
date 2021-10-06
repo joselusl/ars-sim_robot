@@ -68,7 +68,8 @@ class ArsSimRobotRos:
   pub_step_timer = None
 
   # Robot command
-  robot_vel_cmd_sub = None
+  flag_sub_robot_vel_cmd_unstamped = False
+  robot_vel_cmd_unstamped_sub = None
   robot_vel_cmd_stamped_sub = None
 
   # Robot pose publisher
@@ -137,7 +138,8 @@ class ArsSimRobotRos:
 
     # Subcribers
     # Robot cmd subscriber
-    self.robot_vel_cmd_sub = rospy.Subscriber('robot_cmd', Twist, self.robotVelCmdCallback)
+    if(self.flag_sub_robot_vel_cmd_unstamped):
+      self.robot_vel_cmd_unstamped_sub = rospy.Subscriber('robot_cmd', Twist, self.robotVelCmdUnstampedCallback)
     # Robot cmd stamped subscriber
     self.robot_vel_cmd_stamped_sub = rospy.Subscriber('robot_cmd_stamped', TwistStamped, self.robotVelCmdStampedCallback)
     # Robot collision
@@ -210,7 +212,7 @@ class ArsSimRobotRos:
     return
 
     
-  def robotVelCmdCallback(self, robot_vel_cmd_msg):
+  def robotVelCmdUnstampedCallback(self, robot_vel_cmd_msg):
 
     robot_velo_lin_cmd = np.zeros((3,), dtype=float)
     robot_velo_lin_cmd[0] = robot_vel_cmd_msg.linear.x
