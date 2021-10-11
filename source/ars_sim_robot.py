@@ -34,7 +34,9 @@ class ArsSimRobot:
   robot_velo_cmd_sat = None
 
   #
-  robot_dyn_const = None
+  robot_dyn_const_cmd = None
+  robot_dyn_const_lin = None
+  robot_dyn_const_ang = None
 
   #
   mass_quadrotor = None
@@ -42,7 +44,7 @@ class ArsSimRobot:
   #
   gravity = None
 
-  #aerodynamics coef per mass unit
+  # aerodynamics coef per mass unit
   aerodynamics_coef = None
 
 
@@ -54,20 +56,26 @@ class ArsSimRobot:
 
   #
   # m/s
-  robot_velo_lin_cmd = None
+  robot_velo_lin_cmd_in = None
   # rad/s
-  robot_velo_ang_cmd = None
+  robot_velo_ang_cmd_in = None
+
+  #
+  # m/s
+  robot_velo_lin_cmd_ef_robot = None
+  # rad/s
+  robot_velo_ang_cmd_ef_robot = None
 
   #
   robot_posi = None
   robot_atti_quat = None
 
   #
-  robot_velo_lin_robot = None
+  robot_velo_lin_world = None
   robot_velo_ang_robot = None
 
   #
-  robot_acce_lin_robot = None
+  robot_acce_lin_world = None
   robot_acce_ang_robot = None
 
   
@@ -90,11 +98,22 @@ class ArsSimRobot:
     self.robot_velo_cmd_sat = {'lin': {'x': [-5.0, 5.0], 'y': [-5.0, 5.0], 'z': [-5.0, 5.0]}, 
                                 'ang': {'z': [-5.0, 5.0]}}
 
+
     #
-    self.robot_dyn_const = { 'vx': {'k': 1.0, 'T': 0.8355}, 
+    self.robot_dyn_const_cmd = { 'u_x': {'k': 1.0, 'T': 0.1}, 
+                              'u_y': {'k': 1.0, 'T': 0.1},
+                              'u_z': {'k': 1.0, 'T': 0.1},
+                              'u_phi': {'k': 1.0, 'T': 0.1} 
+                              }
+
+    #
+    self.robot_dyn_const_lin = { 'vx': {'k': 1.0, 'T': 0.8355}, 
                               'vy': {'k': 1.0, 'T': 0.7701},
                               'vz': {'k': 1.0, 'T': 0.5013},
-                              'wz': {'k': 1.0, 'T': 0.5142} 
+                              }
+
+    #
+    self.robot_dyn_const_ang = { 'wz': {'k': 1.0, 'T': 0.5142} 
                               }
 
     #
@@ -103,7 +122,7 @@ class ArsSimRobot:
     #
     self.gravity=9.81
 
-    #aerodynamics coef per mass unit
+    # aerodynamics coef per mass unit
     self.aerodynamics_coef = { 'x': 0.2, 'y': 0.2, 'z': 0.2 }
     
 
@@ -114,20 +133,42 @@ class ArsSimRobot:
 
     self.flag_robot_collision = False
 
-    self.robot_velo_lin_cmd = np.zeros((3,), dtype=float)
-    self.robot_velo_ang_cmd = np.zeros((3,), dtype=float)
+    self.robot_velo_lin_cmd_in = np.zeros((3,), dtype=float)
+    self.robot_velo_ang_cmd_in = np.zeros((3,), dtype=float)
+
+    self.robot_velo_lin_cmd_ef_robot = np.zeros((3,), dtype=float)
+    self.robot_velo_ang_cmd_ef_robot = np.zeros((3,), dtype=float)
 
     self.robot_posi = np.zeros((3,), dtype=float)
     self.robot_atti_quat = ars_lib_helpers.Quaternion.zerosQuat()
 
-    self.robot_velo_lin_robot = np.zeros((3,), dtype=float)
+    self.robot_velo_lin_world = np.zeros((3,), dtype=float)
     self.robot_velo_ang_robot = np.zeros((3,), dtype=float)
 
-    self.robot_acce_lin_robot = np.zeros((3,), dtype=float)
+    self.robot_acce_lin_world = np.zeros((3,), dtype=float)
     self.robot_acce_ang_robot = np.zeros((3,), dtype=float)
 
     #
     return
+
+
+  @staticmethod
+  def saturate(value, low_value=-inf, upp_value=inf):
+    if(value < low_value):
+      value = low_value
+    if(value > upp_value):
+      value = upp_value
+    return value
+
+
+  @staticmethod
+  def computeSign(value):
+    sign_value=1.0
+    if(value>0.0):
+      sign_value=1.0
+    else:
+      sign_value=-1.0
+    return sign_value
 
 
   def setTimeStamp(self, time_stamp_ros):
@@ -144,40 +185,28 @@ class ArsSimRobot:
   def setRobotVelCmd(self, lin_vel_cmd, ang_vel_cmd):
 
     if(self.robot_velo_cmd_flag['lin']['x']):
-      self.robot_velo_lin_cmd[0] = lin_vel_cmd[0]
-      if(self.robot_velo_lin_cmd[0] < self.robot_velo_cmd_sat['lin']['x'][0]):
-        self.robot_velo_lin_cmd[0] = self.robot_velo_cmd_sat['lin']['x'][0]
-      if(self.robot_velo_lin_cmd[0] > self.robot_velo_cmd_sat['lin']['x'][1]):
-        self.robot_velo_lin_cmd[0] = self.robot_velo_cmd_sat['lin']['x'][1]
+      self.robot_velo_lin_cmd_in[0] = lin_vel_cmd[0]
+      self.robot_velo_lin_cmd_in[0] = self.saturate(self.robot_velo_lin_cmd_in[0], self.robot_velo_cmd_sat['lin']['x'][0], self.robot_velo_cmd_sat['lin']['x'][1])
     else:
-      self.robot_velo_lin_cmd[0] = 0.0
+      self.robot_velo_lin_cmd_in[0] = 0.0
 
     if(self.robot_velo_cmd_flag['lin']['y']):
-      self.robot_velo_lin_cmd[1] = lin_vel_cmd[1]
-      if(self.robot_velo_lin_cmd[1] < self.robot_velo_cmd_sat['lin']['y'][0]):
-        self.robot_velo_lin_cmd[1] = self.robot_velo_cmd_sat['lin']['y'][0]
-      if(self.robot_velo_lin_cmd[1] > self.robot_velo_cmd_sat['lin']['y'][1]):
-        self.robot_velo_lin_cmd[1] = self.robot_velo_cmd_sat['lin']['y'][1]
+      self.robot_velo_lin_cmd_in[1] = lin_vel_cmd[1]
+      self.robot_velo_lin_cmd_in[1] = self.saturate(self.robot_velo_lin_cmd_in[1], self.robot_velo_cmd_sat['lin']['y'][0], self.robot_velo_cmd_sat['lin']['y'][1])
     else:
-      self.robot_velo_lin_cmd[1] = 0.0
+      self.robot_velo_lin_cmd_in[1] = 0.0
 
     if(self.robot_velo_cmd_flag['lin']['z']):
-      self.robot_velo_lin_cmd[2] = lin_vel_cmd[2]
-      if(self.robot_velo_lin_cmd[2] < self.robot_velo_cmd_sat['lin']['z'][0]):
-        self.robot_velo_lin_cmd[2] = self.robot_velo_cmd_sat['lin']['z'][0]
-      if(self.robot_velo_lin_cmd[2] > self.robot_velo_cmd_sat['lin']['z'][1]):
-        self.robot_velo_lin_cmd[2] = self.robot_velo_cmd_sat['lin']['z'][1]
+      self.robot_velo_lin_cmd_in[2] = lin_vel_cmd[2]
+      self.robot_velo_lin_cmd_in[2] = self.saturate(self.robot_velo_lin_cmd_in[2], self.robot_velo_cmd_sat['lin']['z'][0], self.robot_velo_cmd_sat['lin']['z'][1])
     else:
-      self.robot_velo_lin_cmd[2] = 0.0
+      self.robot_velo_lin_cmd_in[2] = 0.0
 
     if(self.robot_velo_cmd_flag['ang']['z']):
-      self.robot_velo_ang_cmd[2] = ang_vel_cmd[2]
-      if(self.robot_velo_ang_cmd[2] < self.robot_velo_cmd_sat['ang']['z'][0]):
-        self.robot_velo_ang_cmd[2] = self.robot_velo_cmd_sat['ang']['z'][0]
-      if(self.robot_velo_ang_cmd[2] > self.robot_velo_cmd_sat['ang']['z'][1]):
-        self.robot_velo_ang_cmd[2] = self.robot_velo_cmd_sat['ang']['z'][1]
+      self.robot_velo_ang_cmd_in[2] = ang_vel_cmd[2]
+      self.robot_velo_ang_cmd_in[2] = self.saturate(self.robot_velo_ang_cmd_in[2], self.robot_velo_cmd_sat['ang']['z'][0], self.robot_velo_cmd_sat['ang']['z'][1])
     else:
-      self.robot_velo_ang_cmd[2] = 0.0
+      self.robot_velo_ang_cmd_in[2] = 0.0
 
     return
 
@@ -190,12 +219,12 @@ class ArsSimRobot:
     return self.robot_atti_quat
 
 
-  def getRobotVeloLinRobot(self):
-    return self.robot_velo_lin_robot
-
-
   def getRobotVeloLinWorld(self):
-    return ars_lib_helpers.Conversions.convertVelLinFromRobotToWorld(self.robot_velo_lin_robot, self.robot_atti_quat, False)
+    return self.robot_velo_lin_world
+
+
+  def getRobotVeloLinRobot(self):
+    return ars_lib_helpers.Conversions.convertVelLinFromWorldToRobot(self.robot_velo_lin_world, self.robot_atti_quat, False)
 
 
   def getRobotVeloAngRobot(self):
@@ -206,12 +235,12 @@ class ArsSimRobot:
     return ars_lib_helpers.Conversions.convertVelAngFromRobotToWorld(self.robot_velo_ang_robot, self.robot_atti_quat, False)
 
 
-  def getRobotAcceLinRobot(self):
-    return self.robot_acce_lin_robot
-
-
   def getRobotAcceLinWorld(self):
-    return ars_lib_helpers.Conversions.convertVelLinFromRobotToWorld(self.robot_acce_lin_robot, self.robot_atti_quat, False)
+    return self.robot_acce_lin_world
+
+
+  def getRobotAcceLinRobot(self):
+    return ars_lib_helpers.Conversions.convertVelLinFromWorldToRobot(self.robot_acce_lin_world, self.robot_atti_quat, False)
 
 
   def getRobotAcceAngRobot(self):
@@ -235,15 +264,29 @@ class ArsSimRobot:
     robot_atti_quat_simp = ars_lib_helpers.Quaternion.getSimplifiedQuatRobotAtti(self.robot_atti_quat)
 
     #
-    robot_velo_lin_world = ars_lib_helpers.Conversions.convertVelLinFromRobotToWorld(self.robot_velo_lin_robot, self.robot_atti_quat, False)
+    robot_velo_lin_cmd_ef_world = ars_lib_helpers.Conversions.convertVelLinFromRobotToWorld(self.robot_velo_lin_cmd_ef_robot, self.robot_atti_quat, False)
+    robot_velo_ang_cmd_ef_world = ars_lib_helpers.Conversions.convertVelAngFromRobotToWorld(self.robot_velo_ang_cmd_ef_robot, self.robot_atti_quat, False)
+
+    #
+    robot_velo_lin_robot = ars_lib_helpers.Conversions.convertVelLinFromWorldToRobot(self.robot_velo_lin_world, self.robot_atti_quat, False)
+
+    #
+    robot_acce_lin_robot = ars_lib_helpers.Conversions.convertVelLinFromWorldToRobot(self.robot_acce_lin_world, self.robot_atti_quat, False)
+
+
 
 
     if(self.flag_robot_collision):
 
       # Update state
+      #
+      self.robot_velo_lin_cmd_ef_robot = np.zeros((3,), dtype=float)
+      self.robot_velo_ang_cmd_ef_robot = np.zeros((3,), dtype=float)
+      #
       self.robot_posi = self.robot_posi
-      self.robot_velo_lin_robot = np.zeros((3,), dtype=float)
-      self.robot_acce_lin_robot = np.zeros((3,), dtype=float)
+      self.robot_velo_lin_world = np.zeros((3,), dtype=float)
+      self.robot_acce_lin_world = np.zeros((3,), dtype=float)
+      #
       self.robot_atti_quat = self.robot_atti_quat
       self.robot_velo_ang_robot = np.zeros((3,), dtype=float)
       self.robot_acce_ang_robot = np.zeros((3,), dtype=float)
@@ -251,23 +294,34 @@ class ArsSimRobot:
 
     else:
 
+      # Control command - Linear
+      new_robot_velo_lin_cmd_ef_robot = np.zeros((3,), dtype=float)
+      new_robot_velo_lin_cmd_ef_robot[0] = self.robot_velo_lin_cmd_ef_robot[0] * (1.0 - delta_time/self.robot_dyn_const_cmd['u_x']['T']) + delta_time/self.robot_dyn_const_cmd['u_x']['T']*self.robot_dyn_const_cmd['u_x']['k']*self.robot_velo_lin_cmd_in[0]
+      new_robot_velo_lin_cmd_ef_robot[1] = self.robot_velo_lin_cmd_ef_robot[1] * (1.0 - delta_time/self.robot_dyn_const_cmd['u_y']['T']) + delta_time/self.robot_dyn_const_cmd['u_y']['T']*self.robot_dyn_const_cmd['u_y']['k']*self.robot_velo_lin_cmd_in[1]
+      new_robot_velo_lin_cmd_ef_robot[2] = self.robot_velo_lin_cmd_ef_robot[2] * (1.0 - delta_time/self.robot_dyn_const_cmd['u_z']['T']) + delta_time/self.robot_dyn_const_cmd['u_z']['T']*self.robot_dyn_const_cmd['u_z']['k']*self.robot_velo_lin_cmd_in[2]
+
+      # Control command - Angular
+      new_robot_velo_ang_cmd_ef_robot = np.zeros((3,), dtype=float)
+      new_robot_velo_ang_cmd_ef_robot[2] = self.robot_velo_ang_cmd_ef_robot[2] * (1.0 - delta_time/self.robot_dyn_const_cmd['u_phi']['T']) + delta_time/self.robot_dyn_const_cmd['u_phi']['T']*self.robot_dyn_const_cmd['u_phi']['k']*self.robot_velo_ang_cmd_in[2]
+
+
       # Position
       new_robot_posi = np.zeros((3,), dtype=float)
-      new_robot_posi[0] = self.robot_posi[0] + delta_time * robot_velo_lin_world[0]
-      new_robot_posi[1] = self.robot_posi[1] + delta_time * robot_velo_lin_world[1]
-      new_robot_posi[2] = self.robot_posi[2] + delta_time * robot_velo_lin_world[2]
+      new_robot_posi[0] = self.robot_posi[0] + delta_time * self.robot_velo_lin_world[0]
+      new_robot_posi[1] = self.robot_posi[1] + delta_time * self.robot_velo_lin_world[1]
+      new_robot_posi[2] = self.robot_posi[2] + delta_time * self.robot_velo_lin_world[2]
 
       # Accel lin
-      robot_accel_lin_robot = np.zeros((3,), dtype=float)
-      robot_accel_lin_robot[0] = 1/self.robot_dyn_const['vx']['T']*(-self.robot_velo_lin_robot[0]+self.robot_dyn_const['vx']['k']*self.robot_velo_lin_cmd[0])
-      robot_accel_lin_robot[1] = 1/self.robot_dyn_const['vy']['T']*(-self.robot_velo_lin_robot[1]+self.robot_dyn_const['vy']['k']*self.robot_velo_lin_cmd[1])
-      robot_accel_lin_robot[2] = 1/self.robot_dyn_const['vz']['T']*(-self.robot_velo_lin_robot[2]+self.robot_dyn_const['vz']['k']*self.robot_velo_lin_cmd[2])
+      new_robot_acce_lin_world = np.zeros((3,), dtype=float)
+      new_robot_acce_lin_world[0] = 1/self.robot_dyn_const_lin['vx']['T']*(-self.robot_velo_lin_world[0]+self.robot_dyn_const_lin['vx']['k']*robot_velo_lin_cmd_ef_world[0])
+      new_robot_acce_lin_world[1] = 1/self.robot_dyn_const_lin['vy']['T']*(-self.robot_velo_lin_world[1]+self.robot_dyn_const_lin['vy']['k']*robot_velo_lin_cmd_ef_world[1])
+      new_robot_acce_lin_world[2] = 1/self.robot_dyn_const_lin['vz']['T']*(-self.robot_velo_lin_world[2]+self.robot_dyn_const_lin['vz']['k']*robot_velo_lin_cmd_ef_world[2])
 
       # Velo lin
-      new_robot_velo_lin_robot = np.zeros((3,), dtype=float)
-      new_robot_velo_lin_robot[0] = self.robot_velo_lin_robot[0] + delta_time * robot_accel_lin_robot[0]
-      new_robot_velo_lin_robot[1] = self.robot_velo_lin_robot[1] + delta_time * robot_accel_lin_robot[1]
-      new_robot_velo_lin_robot[2] = self.robot_velo_lin_robot[2] + delta_time * robot_accel_lin_robot[2]
+      new_robot_velo_lin_world = np.zeros((3,), dtype=float)
+      new_robot_velo_lin_world[0] = self.robot_velo_lin_world[0] + delta_time * self.robot_acce_lin_world[0]
+      new_robot_velo_lin_world[1] = self.robot_velo_lin_world[1] + delta_time * self.robot_acce_lin_world[1]
+      new_robot_velo_lin_world[2] = self.robot_velo_lin_world[2] + delta_time * self.robot_acce_lin_world[2]
 
 
       # Orientation
@@ -290,44 +344,22 @@ class ArsSimRobot:
       if(self.flag_disp_pitch_roll):
 
         #
-        sign_robot_velo_lin_x_robot=1.0
-        if(self.robot_velo_lin_robot[0]>0.0):
-          sign_robot_velo_lin_x_robot=1.0
-        else:
-          sign_robot_velo_lin_x_robot=-1.0
-
-        sign_robot_velo_lin_y_robot=0.0
-        if(self.robot_velo_lin_robot[1]>0.0):
-          sign_robot_velo_lin_y_robot=1.0
-        else:
-          sign_robot_velo_lin_y_robot=-1.0
-
-        sign_robot_velo_lin_z_robot=0.0
-        if(self.robot_velo_lin_robot[2]>0.0):
-          sign_robot_velo_lin_z_robot=1.0
-        else:
-          sign_robot_velo_lin_z_robot=-1.0
+        sign_robot_velo_lin_x_robot=self.computeSign(self.robot_velo_lin_robot[0])
+        sign_robot_velo_lin_y_robot=self.computeSign(self.robot_velo_lin_robot[1])
+        sign_robot_velo_lin_z_robot=self.computeSign(self.robot_velo_lin_robot[2])
 
         #
-        thrust_specific_lin_x = robot_accel_lin_robot[0]+sign_robot_velo_lin_x_robot*1.0/self.mass_quadrotor*self.aerodynamics_coef['x']*self.robot_velo_lin_robot[0]*self.robot_velo_lin_robot[0]
-        thrust_specific_lin_y = robot_accel_lin_robot[1]+sign_robot_velo_lin_y_robot*1.0/self.mass_quadrotor*self.aerodynamics_coef['y']*self.robot_velo_lin_robot[1]*self.robot_velo_lin_robot[1]
-        thrust_specific_lin_z = robot_accel_lin_robot[2]+self.gravity+sign_robot_velo_lin_z_robot*1.0/self.mass_quadrotor*self.aerodynamics_coef['z']*self.robot_velo_lin_robot[2]*self.robot_velo_lin_robot[2]
+        thrust_specific_lin_x = robot_acce_lin_robot[0]+sign_robot_velo_lin_x_robot*1.0/self.mass_quadrotor*self.aerodynamics_coef['x']*robot_velo_lin_robot[0]*robot_velo_lin_robot[0]
+        thrust_specific_lin_y = robot_acce_lin_robot[1]+sign_robot_velo_lin_y_robot*1.0/self.mass_quadrotor*self.aerodynamics_coef['y']*robot_velo_lin_robot[1]*robot_velo_lin_robot[1]
+        thrust_specific_lin_z = robot_acce_lin_robot[2]+self.gravity+sign_robot_velo_lin_z_robot*1.0/self.mass_quadrotor*self.aerodynamics_coef['z']*robot_velo_lin_robot[2]*robot_velo_lin_robot[2]
 
         #
         new_robot_atti_ang_pitch =  math.atan2( thrust_specific_lin_x , thrust_specific_lin_z )
         new_robot_atti_ang_roll  = -math.atan2( thrust_specific_lin_y , thrust_specific_lin_z )
 
         #
-        if(new_robot_atti_ang_pitch > math.pi/4.0):
-          new_robot_atti_ang_pitch = math.pi/4.0
-        if(new_robot_atti_ang_pitch < -math.pi/4.0):
-          new_robot_atti_ang_pitch = -math.pi/4.0
-
-        if(new_robot_atti_ang_roll > math.pi/4.0):
-          new_robot_atti_ang_roll = math.pi/4.0
-        if(new_robot_atti_ang_roll < -math.pi/4.0):
-          new_robot_atti_ang_roll = -math.pi/4.0
-
+        new_robot_atti_ang_pitch = self.saturate(new_robot_atti_ang_pitch, -math.pi/4.0, math.pi/4.0)
+        new_robot_atti_ang_roll = self.saturate(new_robot_atti_ang_roll, -math.pi/4.0, math.pi/4.0)
 
       else:
         new_robot_atti_ang_pitch = 0.0
@@ -339,22 +371,27 @@ class ArsSimRobot:
 
 
       # Accel ang
-      robot_accel_ang_robot = np.zeros((3,), dtype=float)
-      robot_accel_ang_robot[2] = 1/self.robot_dyn_const['wz']['T']*(-self.robot_velo_ang_robot[2]+self.robot_dyn_const['wz']['k']*self.robot_velo_ang_cmd[2])
+      new_robot_acce_ang_robot = np.zeros((3,), dtype=float)
+      new_robot_acce_ang_robot[2] = 1/self.robot_dyn_const_ang['wz']['T']*(-self.robot_velo_ang_robot[2]+self.robot_dyn_const_ang['wz']['k']*robot_velo_ang_cmd_ef_world[2])
 
 
       # Velo ang
       new_robot_velo_ang_robot = np.zeros((3,1), dtype=float)
-      new_robot_velo_ang_robot[2] = self.robot_velo_ang_robot[2] + delta_time * robot_accel_ang_robot[2]
+      new_robot_velo_ang_robot[2] = self.robot_velo_ang_robot[2] + delta_time * self.robot_acce_ang_robot[2]
 
 
       # Update state
+      #
+      self.robot_velo_lin_cmd_ef_robot = new_robot_velo_lin_cmd_ef_robot
+      self.robot_velo_ang_cmd_ef_robot = new_robot_velo_ang_cmd_ef_robot
+      #
       self.robot_posi = new_robot_posi
-      self.robot_velo_lin_robot = new_robot_velo_lin_robot
-      self.robot_acce_lin_robot = robot_accel_lin_robot
+      self.robot_velo_lin_world = new_robot_velo_lin_world
+      self.robot_acce_lin_world = new_robot_acce_lin_world
+      #
       self.robot_atti_quat = new_robot_atti_quat
       self.robot_velo_ang_robot = new_robot_velo_ang_robot
-      self.robot_acce_ang_robot = robot_accel_ang_robot
+      self.robot_acce_ang_robot = new_robot_acce_ang_robot
 
 
     # Update timestamp
