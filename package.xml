@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>ars_sim_robot</name>
-  <version>0.0.0</version>
+  <version>1.0.0</version>
   <description>The ars_sim_robot</description>
 
   <maintainer email="joseluis.sanlop@gmail.com">Jose Luis SANCHEZ-LOPEZ</maintainer>
@@ -21,9 +21,9 @@
   <depend>ars_lib_helpers</depend>
 
   <!-- exec dependencies -->
-  <exec_depend>python-numpy</exec_depend>
-  <exec_depend>python-nvector</exec_depend>
-  <exec_depend>python-rospkg</exec_depend>
+  <exec_depend>python3-numpy</exec_depend>
+  <exec_depend>python3-nvector</exec_depend>
+  <exec_depend>python3-rospkg</exec_depend>
 
   <export>
   </export>
