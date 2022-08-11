@@ -26,8 +26,6 @@ from geometry_msgs.msg import TwistStamped
 from geometry_msgs.msg import Accel
 from geometry_msgs.msg import AccelStamped
 
-import tf_conversions
-
 import tf2_ros
 
 
