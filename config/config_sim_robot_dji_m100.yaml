@@ -1,0 +1,53 @@
+sim_robot:
+  robot_frame: 'robot_base_link'
+  world_frame: 'world'
+  sim_step_time: 0.01
+  pub_step_time: 0.02
+  flag_disp_pitch_roll: True
+  robot_velo_cmd_flag:
+    lin:
+      x: True
+      y: True
+      z: True
+    ang:
+      z: True
+  robot_velo_cmd_sat:
+    lin:
+      x: [-5.0, 5.0]
+      y: [-5.0, 5.0]
+      z: [-5.0, 5.0]
+    ang:
+      z: [-5.0, 5.0]
+  robot_dyn_const_cmd:
+    u_x:
+      k: 1.0
+      T: 0.1
+    u_y:
+      k: 1.0
+      T: 0.1
+    u_z:
+      k: 1.0
+      T: 0.1
+    u_phi:
+      k: 1.0
+      T: 0.1
+  robot_dyn_const_lin:
+    vx:
+      k: 1.0
+      T: 0.8355
+    vy:
+      k: 1.0
+      T: 0.7701
+    vz:
+      k: 1.0
+      T: 0.5013
+  robot_dyn_const_ang:
+    wz:
+      k: 1.0
+      T: 0.5142
+  mass_quadrotor: 2.0
+  aerodynamics_coef:
+    x: 0.2
+    y: 0.2
+    z: 0.2
+  

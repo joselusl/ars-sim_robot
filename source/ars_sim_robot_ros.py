@@ -5,6 +5,10 @@ from numpy import *
 
 import os
 
+# pyyaml - https://pyyaml.org/wiki/PyYAMLDocumentation
+import yaml
+from yaml.loader import SafeLoader
+
 
 
 
@@ -48,20 +52,20 @@ class ArsSimRobotRos:
 
 
   # Robot frame
-  robot_frame = 'robot_base_link'
+  robot_frame = None
 
   # World frame
-  world_frame = 'world'
+  world_frame = None
 
   # Sim step 
   # time step
-  sim_step_time = 0.01
+  sim_step_time = None
   # Timer
   sim_step_timer = None
 
   # Pub timer
   # time step
-  pub_step_time = 0.02
+  pub_step_time = None
   # Timer
   pub_step_timer = None
 
@@ -81,11 +85,15 @@ class ArsSimRobotRos:
   robot_acc_world_pub = None
   robot_acc_robot_pub = None
 
-  # Robot collision subscriber
-  robot_collision_sub = None
+  # Robot cmd control enabled subscriber
+  robot_cmd_control_enabled_sub = None
 
   # tf2 broadcaster
   tf2_broadcaster = None
+
+  # Param
+  robot_sim_description_yaml_file_name = None
+  robot_sim_description = None
 
 
   # Robot simulator
@@ -113,11 +121,39 @@ class ArsSimRobotRos:
 
     #### READING PARAMETERS ###
     
+    # Environment description
+    default_robot_sim_description_yaml_file_name = os.path.join(pkg_path,'config','config_sim_robot_dji_m100.yaml')
+    robot_sim_description_yaml_file_name_str = rospy.get_param('~robot_sim_description_yaml_file', default_robot_sim_description_yaml_file_name)
+    print(robot_sim_description_yaml_file_name_str)
+    self.robot_sim_description_yaml_file_name = os.path.abspath(robot_sim_description_yaml_file_name_str)
 
     ###
 
     #
     self.robot.setTimeStamp(rospy.Time.now())
+
+
+    # Load robot description
+    with open(self.robot_sim_description_yaml_file_name,'r') as file:
+        # The FullLoader parameter handles the conversion from YAML
+        # scalar values to Python the dictionary format
+        self.robot_sim_description = yaml.load(file, Loader=SafeLoader)['sim_robot']
+
+    if(self.robot_sim_description is None):
+      print("Error loading robot sim description")
+    else:
+      print("Robot sim description:")
+      print(self.robot_sim_description)
+
+    # Set robot description param
+    self.robot.setRobotSimDescription(self.robot_sim_description)
+
+    # Set other robot description param
+    self.robot_frame = self.robot_sim_description['robot_frame']
+    self.world_frame = self.robot_sim_description['world_frame']
+    self.sim_step_time = self.robot_sim_description['sim_step_time']
+    self.pub_step_time = self.robot_sim_description['pub_step_time']
+
 
 
     # Init state
@@ -133,7 +169,6 @@ class ArsSimRobotRos:
 
   def open(self):
 
-
     # Subcribers
     # Robot cmd subscriber
     if(self.flag_sub_robot_vel_cmd_unstamped):
@@ -141,7 +176,7 @@ class ArsSimRobotRos:
     # Robot cmd stamped subscriber
     self.robot_vel_cmd_stamped_sub = rospy.Subscriber('robot_cmd_stamped', TwistStamped, self.robotVelCmdStampedCallback)
     # Robot collision
-    self.robot_collision_sub = rospy.Subscriber('robot_collision', Bool, self.robotCollisionCallback)
+    self.robot_cmd_control_enabled_sub = rospy.Subscriber('robot_cmd_control_enabled', Bool, self.robotControlEnabledCallback)
 
 
     # Publishers
@@ -244,9 +279,9 @@ class ArsSimRobotRos:
     return
 
 
-  def robotCollisionCallback(self, robot_collision_msg):
+  def robotControlEnabledCallback(self, flag_cmd_control_enabled):
 
-    self.robot.flag_robot_collision = robot_collision_msg.data
+    self.robot.flag_cmd_control_enabled = flag_cmd_control_enabled.data
 
     return
 

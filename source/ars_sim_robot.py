@@ -52,7 +52,9 @@ class ArsSimRobot:
   time_stamp_ros = None
 
   #
-  flag_robot_collision = None
+  flag_cmd_control_enabled = None
+  #
+  flag_robot_motion_enabled = None
 
   #
   # m/s
@@ -86,6 +88,9 @@ class ArsSimRobot:
   def __init__(self):
 
     #
+    #
+    self.gravity=9.81
+
 
     #
     self.flag_disp_pitch_roll = True
@@ -119,8 +124,6 @@ class ArsSimRobot:
     #
     self.mass_quadrotor=2.0
 
-    #
-    self.gravity=9.81
 
     # aerodynamics coef per mass unit
     self.aerodynamics_coef = { 'x': 0.2, 'y': 0.2, 'z': 0.2 }
@@ -128,11 +131,13 @@ class ArsSimRobot:
 
 
     #
-
     self.time_stamp_ros = rospy.Time(0.0, 0.0)
 
-    self.flag_robot_collision = False
+    #
+    self.flag_cmd_control_enabled = True
+    self.flag_robot_motion_enabled = True
 
+    #
     self.robot_velo_lin_cmd_in = np.zeros((3,), dtype=float)
     self.robot_velo_ang_cmd_in = np.zeros((3,), dtype=float)
 
@@ -180,6 +185,36 @@ class ArsSimRobot:
   def getTimeStamp(self):
 
     return self.time_stamp_ros
+
+
+  def setRobotSimDescription(self, robot_sim_description):
+
+    #
+    self.flag_disp_pitch_roll = robot_sim_description['flag_disp_pitch_roll']
+
+    #
+    self.robot_velo_cmd_flag = robot_sim_description['robot_velo_cmd_flag']
+
+    #
+    self.robot_velo_cmd_sat = robot_sim_description['robot_velo_cmd_sat']
+
+    #
+    self.robot_dyn_const_cmd = robot_sim_description['robot_dyn_const_cmd']
+
+    #
+    self.robot_dyn_const_lin = robot_sim_description['robot_dyn_const_lin']
+
+    #
+    self.robot_dyn_const_ang = robot_sim_description['robot_dyn_const_ang']
+
+    #
+    self.mass_quadrotor = robot_sim_description['mass_quadrotor']
+
+    #
+    self.aerodynamics_coef = robot_sim_description['aerodynamics_coef']
+
+    # End
+    return
 
 
   def setRobotVelCmd(self, lin_vel_cmd, ang_vel_cmd):
@@ -275,8 +310,18 @@ class ArsSimRobot:
 
 
 
+    #
+    if(self.flag_cmd_control_enabled is False):
+      #
+      self.robot_velo_lin_cmd_in[0] = 0.0
+      self.robot_velo_lin_cmd_in[1] = 0.0
+      self.robot_velo_lin_cmd_in[2] = 0.0
+      #
+      self.robot_velo_ang_cmd_in[2] = 0.0
 
-    if(self.flag_robot_collision):
+
+
+    if(self.flag_robot_motion_enabled is False):
 
       # Update state
       #
