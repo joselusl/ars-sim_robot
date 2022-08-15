@@ -36,7 +36,8 @@ import tf2_ros
 
 
 #
-from ars_sim_robot import *
+from ars_sim_robot_dynamics import *
+
 
 
 #
@@ -46,7 +47,7 @@ import ars_lib_helpers
 
 
 
-class ArsSimRobotRos:
+class ArsSimRobotDynamicsRos:
 
   #######
 
@@ -87,6 +88,8 @@ class ArsSimRobotRos:
 
   # Robot cmd control enabled subscriber
   robot_cmd_control_enabled_sub = None
+  # Robot motion enabled subscriber
+  robot_motion_enabled_sub = None
 
   # tf2 broadcaster
   tf2_broadcaster = None
@@ -96,8 +99,8 @@ class ArsSimRobotRos:
   robot_sim_description = None
 
 
-  # Robot simulator
-  robot = ArsSimRobot()
+  # Robot dynamics simulator
+  robot_dynamics = ArsSimRobotDynamics()
   
 
 
@@ -108,7 +111,7 @@ class ArsSimRobotRos:
     return
 
 
-  def init(self, node_name='ars_sim_robot_node'):
+  def init(self, node_name='ars_sim_robot_dynamics_node'):
     #
 
     # Init ROS
@@ -121,7 +124,7 @@ class ArsSimRobotRos:
 
     #### READING PARAMETERS ###
     
-    # Environment description
+    # Robot description
     default_robot_sim_description_yaml_file_name = os.path.join(pkg_path,'config','config_sim_robot_dji_m100.yaml')
     robot_sim_description_yaml_file_name_str = rospy.get_param('~robot_sim_description_yaml_file', default_robot_sim_description_yaml_file_name)
     print(robot_sim_description_yaml_file_name_str)
@@ -130,25 +133,25 @@ class ArsSimRobotRos:
     ###
 
     #
-    self.robot.setTimeStamp(rospy.Time.now())
+    self.robot_dynamics.setTimeStamp(rospy.Time.now())
 
 
-    # Load robot description
+    # Load robot dynamics description
     with open(self.robot_sim_description_yaml_file_name,'r') as file:
         # The FullLoader parameter handles the conversion from YAML
         # scalar values to Python the dictionary format
         self.robot_sim_description = yaml.load(file, Loader=SafeLoader)['sim_robot']
 
     if(self.robot_sim_description is None):
-      print("Error loading robot sim description")
+      print("Error loading robot dynamics sim description")
     else:
       print("Robot sim description:")
       print(self.robot_sim_description)
 
-    # Set robot description param
-    self.robot.setRobotSimDescription(self.robot_sim_description)
+    # Set robot dynamics description param
+    self.robot_dynamics.setRobotSimDescription(self.robot_sim_description)
 
-    # Set other robot description param
+    # Set other robot dynamics description param
     self.robot_frame = self.robot_sim_description['robot_frame']
     self.world_frame = self.robot_sim_description['world_frame']
     self.sim_step_time = self.robot_sim_description['sim_step_time']
@@ -157,10 +160,10 @@ class ArsSimRobotRos:
 
 
     # Init state
-    self.robot.robot_posi = [0.0, 0.0, 1.0]
-    self.robot.robot_atti_quat = ars_lib_helpers.Quaternion.zerosQuat()
-    self.robot.robot_velo_lin_robot = [0.0, 0.0, 0.0]
-    self.robot.robot_velo_ang_robot = [0.0, 0.0, 0.0]
+    self.robot_dynamics.robot_posi = [0.0, 0.0, 1.0]
+    self.robot_dynamics.robot_atti_quat = ars_lib_helpers.Quaternion.zerosQuat()
+    self.robot_dynamics.robot_velo_lin_robot = [0.0, 0.0, 0.0]
+    self.robot_dynamics.robot_velo_ang_robot = [0.0, 0.0, 0.0]
 
     
     # End
@@ -175,8 +178,10 @@ class ArsSimRobotRos:
       self.robot_vel_cmd_unstamped_sub = rospy.Subscriber('robot_cmd', Twist, self.robotVelCmdUnstampedCallback)
     # Robot cmd stamped subscriber
     self.robot_vel_cmd_stamped_sub = rospy.Subscriber('robot_cmd_stamped', TwistStamped, self.robotVelCmdStampedCallback)
-    # Robot collision
+    # Robot cmd control enabled
     self.robot_cmd_control_enabled_sub = rospy.Subscriber('robot_cmd_control_enabled', Bool, self.robotControlEnabledCallback)
+    # Robot motion enabled
+    self.robot_motion_enabled_sub = rospy.Subscriber('robot_motion_enabled', Bool, self.robotMotionEnabledCallback)
 
 
     # Publishers
@@ -220,7 +225,7 @@ class ArsSimRobotRos:
     time_stamp_current = rospy.Time.now()
 
     # Robot
-    self.robot.simRobot(time_stamp_current)
+    self.robot_dynamics.simRobot(time_stamp_current)
     
     # End
     return
@@ -231,7 +236,7 @@ class ArsSimRobotRos:
     time_stamp_current = rospy.Time.now()
 
     # Robot
-    self.robot.simRobot(time_stamp_current)
+    self.robot_dynamics.simRobot(time_stamp_current)
 
     # Publish
     # Pose
@@ -257,7 +262,7 @@ class ArsSimRobotRos:
     robot_velo_ang_cmd[1] = robot_vel_cmd_msg.angular.y
     robot_velo_ang_cmd[2] = robot_vel_cmd_msg.angular.z
 
-    self.robot.setRobotVelCmd(robot_velo_lin_cmd, robot_velo_ang_cmd)
+    self.robot_dynamics.setRobotVelCmd(robot_velo_lin_cmd, robot_velo_ang_cmd)
 
     return
 
@@ -274,14 +279,21 @@ class ArsSimRobotRos:
     robot_velo_ang_cmd[1] = robot_vel_cmd_stamped_msg.twist.angular.y
     robot_velo_ang_cmd[2] = robot_vel_cmd_stamped_msg.twist.angular.z
 
-    self.robot.setRobotVelCmd(robot_velo_lin_cmd, robot_velo_ang_cmd)
+    self.robot_dynamics.setRobotVelCmd(robot_velo_lin_cmd, robot_velo_ang_cmd)
 
     return
 
 
   def robotControlEnabledCallback(self, flag_cmd_control_enabled):
 
-    self.robot.flag_cmd_control_enabled = flag_cmd_control_enabled.data
+    self.robot_dynamics.flag_cmd_control_enabled = flag_cmd_control_enabled.data
+
+    return
+
+
+  def robotMotionEnabledCallback(self, flag_robot_motion_enabled):
+
+    self.robot_dynamics.flag_robot_motion_enabled = flag_robot_motion_enabled.data
 
     return
 
@@ -289,11 +301,11 @@ class ArsSimRobotRos:
   def robotPosePub(self):
 
     #
-    time_stamp_current = self.robot.getTimeStamp()
+    time_stamp_current = self.robot_dynamics.getTimeStamp()
 
     #
-    robot_posi = self.robot.getRobotPosi()
-    robot_atti_quat = self.robot.getRobotAttiQuat()
+    robot_posi = self.robot_dynamics.getRobotPosi()
+    robot_atti_quat = self.robot_dynamics.getRobotAttiQuat()
 
 
     #
@@ -341,13 +353,13 @@ class ArsSimRobotRos:
   def robotVelPub(self):
 
     #
-    time_stamp_current = self.robot.getTimeStamp()
+    time_stamp_current = self.robot_dynamics.getTimeStamp()
 
-    robot_velo_lin_robot = self.robot.getRobotVeloLinRobot()
-    robot_velo_ang_robot = self.robot.getRobotVeloAngRobot()
+    robot_velo_lin_robot = self.robot_dynamics.getRobotVeloLinRobot()
+    robot_velo_ang_robot = self.robot_dynamics.getRobotVeloAngRobot()
 
-    robot_velo_lin_world = self.robot.getRobotVeloLinWorld()
-    robot_velo_ang_world = self.robot.getRobotVeloAngWorld()
+    robot_velo_lin_world = self.robot_dynamics.getRobotVeloLinWorld()
+    robot_velo_ang_world = self.robot_dynamics.getRobotVeloAngWorld()
 
 
     #
@@ -392,13 +404,13 @@ class ArsSimRobotRos:
   def robotAccPub(self):
 
     #
-    time_stamp_current = self.robot.getTimeStamp()
+    time_stamp_current = self.robot_dynamics.getTimeStamp()
 
-    robot_acce_lin_robot = self.robot.getRobotAcceLinRobot()
-    robot_acce_ang_robot = self.robot.getRobotAcceAngRobot()
+    robot_acce_lin_robot = self.robot_dynamics.getRobotAcceLinRobot()
+    robot_acce_ang_robot = self.robot_dynamics.getRobotAcceAngRobot()
 
-    robot_acce_lin_world = self.robot.getRobotAcceLinWorld()
-    robot_acce_ang_world = self.robot.getRobotAcceAngWorld()
+    robot_acce_lin_world = self.robot_dynamics.getRobotAcceLinWorld()
+    robot_acce_ang_world = self.robot_dynamics.getRobotAcceAngWorld()
 
 
     #

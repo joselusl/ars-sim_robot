@@ -20,7 +20,7 @@ import ars_lib_helpers
 
 
 
-class ArsSimRobot:
+class ArsSimRobotDynamics:
 
   #######
 

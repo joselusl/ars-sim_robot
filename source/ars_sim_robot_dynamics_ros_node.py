@@ -9,20 +9,20 @@ import os
 import rospy
 
 
-from ars_sim_robot_ros import *
+from ars_sim_robot_dynamics_ros import *
 
 
 
 
 def main():
 
-  ars_sim_robot_ros = ArsSimRobotRos()
+  ars_sim_robot_dynamics_ros = ArsSimRobotDynamicsRos()
 
-  ars_sim_robot_ros.init()
-  ars_sim_robot_ros.open()
+  ars_sim_robot_dynamics_ros.init()
+  ars_sim_robot_dynamics_ros.open()
 
   try:
-    ars_sim_robot_ros.run()
+    ars_sim_robot_dynamics_ros.run()
   except rospy.ROSInterruptException:
     pass
 
