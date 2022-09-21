@@ -83,11 +83,11 @@ class ArsSimRobotStatusRos:
 
     # Publishers
     #
-    self.robot_status_pub = rospy.Publisher("robot_status", RobotStatus, queue_size=1)
+    self.robot_status_pub = rospy.Publisher("robot_status", RobotStatus, latch=True)
     # Robot cmd control enabled
-    self.robot_cmd_control_enabled_pub = rospy.Publisher('robot_cmd_control_enabled', Bool, queue_size=1)
+    self.robot_cmd_control_enabled_pub = rospy.Publisher('robot_cmd_control_enabled', Bool, latch=True)
     # Robot motion enabled
-    self.robot_motion_enabled_pub = rospy.Publisher('robot_motion_enabled', Bool, queue_size=1)
+    self.robot_motion_enabled_pub = rospy.Publisher('robot_motion_enabled', Bool, latch=True)
 
 
     # Subscribers
