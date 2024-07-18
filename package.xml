@@ -5,11 +5,8 @@
   <description>The ars_sim_robot</description>
 
   <maintainer email="joseluis.sanlop@gmail.com">Jose Luis SANCHEZ-LOPEZ</maintainer>
-  <author email="joseluis.sanlop@gmail.com">Jose Luis SANCHEZ-LOPEZ</author>
 
   <license>BSD</license>
-
-  <buildtool_depend>catkin</buildtool_depend>
 
   <depend>rospy</depend>
   <depend>std_msgs</depend>
@@ -18,7 +15,7 @@
   <depend>tf_conversions</depend>
   <depend>tf2_ros</depend>
 
-  <depend>dji_tello_msgs</depend>
+  <depend>ars_robot_msgs</depend>
 
   <depend>ars_lib_helpers</depend>
 
@@ -27,7 +24,14 @@
   <exec_depend>python-nvector</exec_depend>
   <exec_depend>python-rospkg</exec_depend>
 
+
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>python3-pytest</test_depend>
+
   <export>
+    <build_type>ament_python</build_type>
   </export>
 
 </package>

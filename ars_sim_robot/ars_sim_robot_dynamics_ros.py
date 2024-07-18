@@ -14,6 +14,10 @@ from yaml.loader import SafeLoader
 
 # ROS
 
+import rclpy
+from rclpy.node import Node
+
+
 import rospy
 
 import rospkg
@@ -47,7 +51,7 @@ import ars_lib_helpers
 
 
 
-class ArsSimRobotDynamicsRos:
+class ArsSimRobotDynamicsRos(Node):
 
   #######
 
@@ -214,7 +218,7 @@ class ArsSimRobotDynamicsRos:
 
   def run(self):
 
-    rospy.spin()
+    rclpy.spin(self)
 
     return
 
