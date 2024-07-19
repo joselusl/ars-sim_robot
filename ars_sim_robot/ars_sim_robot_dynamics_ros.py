@@ -15,7 +15,7 @@ from rclpy.node import Node
 from rclpy.time import Time
 
 
-#import rospkg
+#import
 from ament_index_python.packages import get_package_share_directory
 
 
@@ -140,7 +140,6 @@ class ArsSimRobotDynamicsRos(Node):
 
 
     #
-    #self.robot_dynamics.setTimeStamp(rospy.Time.now())
     self.robot_dynamics.setTimeStamp(self.get_clock().now())
 
 
