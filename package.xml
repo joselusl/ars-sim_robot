@@ -16,7 +16,6 @@
   <depend>tf2_ros</depend>
 
   <depend>ars_robot_msgs</depend>
-
   <depend>ars_lib_helpers</depend>
 
   <!-- exec dependencies -->
@@ -24,6 +23,7 @@
   <exec_depend>python-nvector</exec_depend>
   <exec_depend>python-rospkg</exec_depend>
 
+  <exec_depend>ament_index_python</exec_depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>

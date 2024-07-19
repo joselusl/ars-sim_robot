@@ -1,15 +1,8 @@
 #!/usr/bin/env python3
 
-import numpy as np
-from numpy import *
-
-import os
-
-
 import rclpy
 
 from ars_sim_robot.ars_sim_robot_status_ros import ArsSimRobotStatusRos
-
 
 
 def main(args=None):

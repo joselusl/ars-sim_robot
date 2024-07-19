@@ -1,21 +1,15 @@
-#!/usr/bin/env python
-
 import numpy as np
 from numpy import *
 
-import os
-
-
-
 # ROS
+import rclpy
+from rclpy.time import Time
 
-import rospy
-
-import tf_conversions as tf
+import tf_transformations
 
 
 #
-import ars_lib_helpers
+import ars_lib_helpers.ars_lib_helpers as ars_lib_helpers
 
 
 
@@ -131,7 +125,7 @@ class ArsSimRobotDynamics:
 
 
     #
-    self.time_stamp_ros = rospy.Time(0.0, 0.0)
+    self.time_stamp_ros = Time(seconds=0, nanoseconds=0)
 
     #
     self.flag_cmd_control_enabled = True
@@ -290,7 +284,7 @@ class ArsSimRobotDynamics:
 
     # Delta time
     delta_time_ros = time_stamp_ros - self.time_stamp_ros
-    delta_time = delta_time_ros.to_sec()
+    delta_time = delta_time_ros.nanoseconds/1e9
 
 
     # Calculations
@@ -373,11 +367,11 @@ class ArsSimRobotDynamics:
       
       #
       delta_rho = delta_time*self.robot_velo_ang_robot[2]
-      dq_simp_robot = np.zeros((2,1), dtype=float)
+      dq_simp_robot = np.zeros((2,), dtype=float)
       dq_simp_robot[0] = math.cos(0.5*delta_rho) # dqw
       dq_simp_robot[1] = math.sin(0.5*delta_rho) # dqz
       #
-      new_robot_atti_quat_simp = np.zeros((2,1), dtype=float)
+      new_robot_atti_quat_simp = np.zeros((2,), dtype=float)
       new_robot_atti_quat_simp = ars_lib_helpers.Quaternion.quatSimpProd(robot_atti_quat_simp, dq_simp_robot)
 
 
@@ -411,7 +405,7 @@ class ArsSimRobotDynamics:
         new_robot_atti_ang_roll = 0.0
 
       #
-      new_robot_atti_quat_tf = tf.transformations.quaternion_from_euler(new_robot_atti_ang_roll, new_robot_atti_ang_pitch, new_robot_atti_ang_yaw, axes='sxyz')
+      new_robot_atti_quat_tf = tf_transformations.quaternion_from_euler(new_robot_atti_ang_roll, new_robot_atti_ang_pitch, new_robot_atti_ang_yaw, axes='sxyz')
       new_robot_atti_quat = np.roll(new_robot_atti_quat_tf, 1)
 
 
@@ -421,7 +415,7 @@ class ArsSimRobotDynamics:
 
 
       # Velo ang
-      new_robot_velo_ang_robot = np.zeros((3,1), dtype=float)
+      new_robot_velo_ang_robot = np.zeros((3,), dtype=float)
       new_robot_velo_ang_robot[2] = self.robot_velo_ang_robot[2] + delta_time * self.robot_acce_ang_robot[2]
 
 

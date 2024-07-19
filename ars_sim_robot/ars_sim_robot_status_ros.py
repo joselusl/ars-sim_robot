@@ -1,6 +1,3 @@
-import numpy as np
-from numpy import *
-
 import rclpy
 from rclpy.node import Node
 
@@ -28,9 +25,11 @@ class ArsSimRobotStatusRos(Node):
   # secs
   taking_off_duration = 3.0
   taking_off_timer = None
+  taking_off_timer_active = False 
   # secs
   landing_duration = 3.0
   landing_timer = None
+  landing_timer_active = False
 
   #
   robot_takeoff_sub = None
@@ -60,21 +59,16 @@ class ArsSimRobotStatusRos(Node):
     return
 
 
-
   def __init(self, node_name='ars_sim_robot_status_node'):
-    #
 
     # Init ROS
     super().__init__(node_name)
 
-  
-    
 
     #### READING PARAMETERS ###
     self.declare_parameter('robot_init_status_flying', False)
     self.robot_init_status_flying = self.get_parameter('robot_init_status_flying').get_parameter_value().bool_value
-
-
+    
 
     # End
     return

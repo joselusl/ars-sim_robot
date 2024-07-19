@@ -1,20 +1,8 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import rclpy
-from rclpy.node import Node
 
-import numpy as np
-from numpy import *
-
-import os
-
-
-import rospy
-
-
-from ars_sim_robot_dynamics_ros import *
-
-
+from ars_sim_robot.ars_sim_robot_dynamics_ros import ArsSimRobotDynamicsRos
 
 
 def main(args=None):
@@ -23,17 +11,16 @@ def main(args=None):
 
   ars_sim_robot_dynamics_ros = ArsSimRobotDynamicsRos()
 
-  ars_sim_robot_dynamics_ros.init()
   ars_sim_robot_dynamics_ros.open()
 
   try:
-    ars_sim_robot_dynamics_ros.run()
-  except rospy.ROSInterruptException:
-    pass
-
-
-  minimal_publisher.destroy_node()
-  rclpy.shutdown()
+      ars_sim_robot_dynamics_ros.run()
+  except (KeyboardInterrupt, rclpy.executors.ExternalShutdownException):
+      # Graceful shutdown on interruption
+      pass
+  finally:
+    ars_sim_robot_dynamics_ros.destroy_node()
+    rclpy.try_shutdown()
 
 
   return 0
