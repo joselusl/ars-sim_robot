@@ -1,16 +1,14 @@
 <?xml version="1.0"?>
-<package format="2">
+<package format="3">
   <name>ars_sim_robot</name>
-  <version>1.0.0</version>
+  <version>0.0.1</version>
   <description>The ars_sim_robot</description>
 
   <maintainer email="joseluis.sanlop@gmail.com">Jose Luis SANCHEZ-LOPEZ</maintainer>
 
   <license>BSD</license>
 
-  <depend>rospy</depend>
   <depend>std_msgs</depend>
-  <depend>sensor_msgs</depend>
   <depend>geometry_msgs</depend>
   <depend>tf_conversions</depend>
   <depend>tf2_ros</depend>
@@ -18,10 +16,8 @@
   <depend>ars_robot_msgs</depend>
   <depend>ars_lib_helpers</depend>
 
-  <!-- exec dependencies -->
   <exec_depend>python-numpy</exec_depend>
   <exec_depend>python-nvector</exec_depend>
-  <exec_depend>python-rospkg</exec_depend>
 
   <exec_depend>ament_index_python</exec_depend>
 
