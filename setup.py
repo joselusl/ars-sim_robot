@@ -20,6 +20,7 @@ setup(
  tests_require=['pytest'],
  entry_points={'console_scripts': [
  		'ars_sim_robot_dynamics_ros_node = ars_sim_robot.ars_sim_robot_dynamics_ros_node:main',
+ 		'ars_sim_robot_status_ros_node = ars_sim_robot.ars_sim_robot_status_ros_node:main',
         ],},
 )
 

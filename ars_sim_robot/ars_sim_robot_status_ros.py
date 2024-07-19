@@ -1,10 +1,8 @@
-#!/usr/bin/env python
-
 import numpy as np
 from numpy import *
 
-import rospy
-import rospkg
+import rclpy
+from rclpy.node import Node
 
 import std_msgs.msg
 from std_msgs.msg import Empty
@@ -15,7 +13,7 @@ from ars_robot_msgs.msg import RobotStatus
 
 
 
-class ArsSimRobotStatusRos:
+class ArsSimRobotStatusRos(Node):
 
   # Robot status
   # UNKNOWN = 0
@@ -53,26 +51,29 @@ class ArsSimRobotStatusRos:
 
   #########
 
-  def __init__(self):
+  def __init__(self, node_name='ars_sim_robot_status_node'):
 
     self.robot_status = self.robot_status_types['UNKNOWN']
+
+    self.__init(node_name)
 
     return
 
 
-  def init(self, node_name='ars_sim_robot_status_node'):
+
+  def __init(self, node_name='ars_sim_robot_status_node'):
     #
 
     # Init ROS
-    rospy.init_node(node_name, anonymous=True)
+    super().__init__(node_name)
 
-    
-    # Package path
-    pkg_path = rospkg.RosPack().get_path('ars_sim_robot')
+  
     
 
     #### READING PARAMETERS ###
-    self.robot_init_status_flying = rospy.get_param('~robot_init_status_flying', False)
+    self.declare_parameter('robot_init_status_flying', False)
+    self.robot_init_status_flying = self.get_parameter('robot_init_status_flying').get_parameter_value().bool_value
+
 
 
     # End
@@ -83,22 +84,22 @@ class ArsSimRobotStatusRos:
 
     # Publishers
     #
-    self.robot_status_pub = rospy.Publisher("robot_status", RobotStatus, queue_size=1, latch=True)
+    self.robot_status_pub = self.create_publisher(RobotStatus, "robot_status", qos_profile=10)
     # Robot cmd control enabled
-    self.robot_cmd_control_enabled_pub = rospy.Publisher('robot_cmd_control_enabled', Bool, queue_size=1, latch=True)
+    self.robot_cmd_control_enabled_pub = self.create_publisher(Bool, 'robot_cmd_control_enabled', qos_profile=10)
     # Robot motion enabled
-    self.robot_motion_enabled_pub = rospy.Publisher('robot_motion_enabled', Bool, queue_size=1, latch=True)
+    self.robot_motion_enabled_pub = self.create_publisher(Bool, 'robot_motion_enabled', qos_profile=10)
 
 
     # Subscribers
     #
-    self.robot_takeoff_sub = rospy.Subscriber("takeoff", Empty, self.takeoffCallback, queue_size=1)
+    self.robot_takeoff_sub = self.create_subscription(Empty, "takeoff", self.takeoffCallback, qos_profile=10)
     #
-    self.robot_land_sub = rospy.Subscriber("land", Empty, self.landCallback, queue_size=1)
+    self.robot_land_sub = self.create_subscription(Empty, "land", self.landCallback, qos_profile=10)
 
 
     # Timers
-    self.robot_status_timer = rospy.Timer(rospy.Duration(0.1), self.robotStatusTimerCallback)
+    self.robot_status_timer = self.create_timer(0.1, self.robotStatusTimerCallback)
 
 
 
@@ -117,7 +118,7 @@ class ArsSimRobotStatusRos:
 
   def run(self):
 
-    rospy.spin()
+    rclpy.spin(self)
 
     return
 
@@ -204,8 +205,14 @@ class ArsSimRobotStatusRos:
     print("Take off command")
 
     # Check
-    if(self.robot_status != self.robot_status_types['LANDED']):
-      print("Cannot take off")
+    if(self.robot_status == self.robot_status_types['TAKING_OFF']):
+      print("-Already taking off")
+      return False
+    if(self.robot_status == self.robot_status_types['FLYING']):
+      print("-Already flying")
+      return False
+    if(self.robot_status != self.robot_status_types['LANDED'] and self.robot_status != self.robot_status_types['TAKING_OFF'] and self.robot_status != self.robot_status_types['FLYING']):
+      print("-Cannot take off")
       return False
 
     #
@@ -215,8 +222,9 @@ class ArsSimRobotStatusRos:
     self.setRobotTakingOff()
 
     # Start timer
-    self.taking_off_timer = rospy.Timer(rospy.Duration(self.taking_off_duration), self.takingOffTimerCallback, oneshot=True)
-      
+    self.taking_off_timer = self.create_timer(self.taking_off_duration, self.takingOffTimerCallback)
+    self.taking_off_timer_active = True 
+
     # End
     return True
 
@@ -227,8 +235,14 @@ class ArsSimRobotStatusRos:
     print("Land command")
 
     # Check
-    if(self.robot_status != self.robot_status_types['FLYING']):
-      print("Cannot land")
+    if(self.robot_status == self.robot_status_types['LANDING']):
+      print("-Already landing")
+      return False
+    if(self.robot_status == self.robot_status_types['LANDED']):
+      print("-Already landed")
+      return False
+    if(self.robot_status != self.robot_status_types['FLYING'] and self.robot_status != self.robot_status_types['LANDING'] and self.robot_status != self.robot_status_types['LANDED']):
+      print("-Cannot land")
       return False
 
     #
@@ -238,40 +252,54 @@ class ArsSimRobotStatusRos:
     self.setRobotLanding()
 
     # Start timer
-    self.landing_timer = rospy.Timer(rospy.Duration(self.landing_duration), self.landingTimerCallback, oneshot=True)
+    self.landing_timer = self.create_timer(self.landing_duration, self.landingTimerCallback)
+    self.landing_timer_active = True 
     
     # End
     return True
 
 
-  def takingOffTimerCallback(self, event):
+  def takingOffTimerCallback(self):
 
-    # Check
-    if(self.robot_status != self.robot_status_types['TAKING_OFF']):
-      print("Error taking off")
-      return
+    if self.taking_off_timer_active:
 
-    #
-    print("Flying")
+      # Check
+      if(self.robot_status != self.robot_status_types['TAKING_OFF']):
+        print("Error taking off")
+        return
 
-    #
-    self.setRobotFlying()
+      #
+      print("Flying")
+
+      #
+      self.setRobotFlying()
+
+      # Deactivate the timer
+      self.taking_off_timer_active = False
+      self.taking_off_timer.cancel()
+      
 
     return
 
 
-  def landingTimerCallback(self, event):
+  def landingTimerCallback(self):
 
-    # Check
-    if(self.robot_status != self.robot_status_types['LANDING']):
-      print("Error landing")
-      return
+    if self.landing_timer_active:
 
-    #
-    print("Landed")
+      # Check
+      if(self.robot_status != self.robot_status_types['LANDING']):
+        print("Error landing")
+        return
 
-    # Change status
-    self.setRobotStatus(self.robot_status_types['LANDED'])
+      #
+      print("Landed")
+
+      # Change status
+      self.setRobotLanded()
+
+      # Deactivate the timer
+      self.landing_timer_active = False
+      self.landing_timer.cancel()
 
     return
 
@@ -290,7 +318,7 @@ class ArsSimRobotStatusRos:
     return
 
 
-  def robotStatusTimerCallback(self, event):
+  def robotStatusTimerCallback(self):
 
     robot_status_msgs = RobotStatus()
 
