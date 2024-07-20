@@ -22,7 +22,6 @@ def main(args=None):
     ars_sim_robot_dynamics_ros.destroy_node()
     rclpy.try_shutdown()
 
-
   return 0
 
 

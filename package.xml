@@ -8,13 +8,13 @@
 
   <license>BSD</license>
 
-  <depend>std_msgs</depend>
-  <depend>geometry_msgs</depend>
-  <depend>tf_conversions</depend>
-  <depend>tf2_ros</depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>tf_conversions</exec_depend>
+  <exec_depend>tf2_ros</exec_depend>
 
-  <depend>ars_robot_msgs</depend>
-  <depend>ars_lib_helpers</depend>
+  <exec_depend>ars_robot_msgs</exec_depend>
+  <exec_depend>ars_lib_helpers</exec_depend>
 
   <exec_depend>python-numpy</exec_depend>
   <exec_depend>python-nvector</exec_depend>
