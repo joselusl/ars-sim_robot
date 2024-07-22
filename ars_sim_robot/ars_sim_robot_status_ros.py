@@ -52,6 +52,10 @@ class ArsSimRobotStatusRos(Node):
 
   def __init__(self, node_name='ars_sim_robot_status_node'):
 
+    # Init ROS
+    super().__init__(node_name)
+
+    #
     self.robot_status = self.robot_status_types['UNKNOWN']
 
     self.__init(node_name)
@@ -60,10 +64,6 @@ class ArsSimRobotStatusRos(Node):
 
 
   def __init(self, node_name='ars_sim_robot_status_node'):
-
-    # Init ROS
-    super().__init__(node_name)
-
 
     #### READING PARAMETERS ###
     self.declare_parameter('robot_init_status_flying', False)

@@ -103,17 +103,17 @@ class ArsSimRobotDynamicsRos(Node):
 
   def __init__(self, node_name='ars_sim_robot_dynamics_node'):
 
+    # Init ROS
+    super().__init__(node_name)
+
+    #
     self.__init(node_name)
 
     return
 
 
   def __init(self, node_name='ars_sim_robot_dynamics_node'):
-
-    # Init ROS
-    super().__init__(node_name)
-
-    
+  
     # Package path
     try:
       pkg_path = get_package_share_directory('ars_sim_robot')
@@ -329,25 +329,25 @@ class ArsSimRobotDynamicsRos(Node):
     robot_pose_msg.pose.orientation.z = robot_atti_quat[3]
 
     # Tf2
-    tf2__msg = TransformStamped()
+    tf2_msg = TransformStamped()
 
-    tf2__msg.header.stamp = time_stamp_current.to_msg()
-    tf2__msg.header.frame_id = self.world_frame
-    tf2__msg.child_frame_id = self.robot_frame
+    tf2_msg.header.stamp = time_stamp_current.to_msg()
+    tf2_msg.header.frame_id = self.world_frame
+    tf2_msg.child_frame_id = self.robot_frame
 
-    tf2__msg.transform.translation.x = robot_posi[0]
-    tf2__msg.transform.translation.y = robot_posi[1]
-    tf2__msg.transform.translation.z = robot_posi[2]
+    tf2_msg.transform.translation.x = robot_posi[0]
+    tf2_msg.transform.translation.y = robot_posi[1]
+    tf2_msg.transform.translation.z = robot_posi[2]
 
-    tf2__msg.transform.rotation.w = robot_atti_quat[0]
-    tf2__msg.transform.rotation.x = robot_atti_quat[1]
-    tf2__msg.transform.rotation.y = robot_atti_quat[2]
-    tf2__msg.transform.rotation.z = robot_atti_quat[3]
+    tf2_msg.transform.rotation.w = robot_atti_quat[0]
+    tf2_msg.transform.rotation.x = robot_atti_quat[1]
+    tf2_msg.transform.rotation.y = robot_atti_quat[2]
+    tf2_msg.transform.rotation.z = robot_atti_quat[3]
 
 
     self.robot_pose_pub.publish(robot_pose_msg)
 
-    self.tf2_broadcaster.sendTransform(tf2__msg)
+    self.tf2_broadcaster.sendTransform(tf2_msg)
 
 
     # End
