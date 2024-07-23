@@ -8,6 +8,11 @@
 
   <license>BSD</license>
 
+  <exec_depend>python-numpy</exec_depend>
+  <exec_depend>python-nvector</exec_depend>
+
+  <exec_depend>ament_index_python</exec_depend>
+
   <exec_depend>std_msgs</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>tf_conversions</exec_depend>
@@ -15,11 +20,6 @@
 
   <exec_depend>ars_robot_msgs</exec_depend>
   <exec_depend>ars_lib_helpers</exec_depend>
-
-  <exec_depend>python-numpy</exec_depend>
-  <exec_depend>python-nvector</exec_depend>
-
-  <exec_depend>ament_index_python</exec_depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>

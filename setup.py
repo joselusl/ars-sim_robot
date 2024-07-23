@@ -26,5 +26,3 @@ setup(
  		'ars_sim_robot_status_ros_node = ars_sim_robot.ars_sim_robot_status_ros_node:main',
         ],},
 )
-
-
