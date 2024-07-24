@@ -80,9 +80,17 @@ class ArsSimRobotStatusRos(Node):
     #
     self.robot_status_pub = self.create_publisher(RobotStatus, "robot_status", qos_profile=10)
     # Robot cmd control enabled
-    self.robot_cmd_control_enabled_pub = self.create_publisher(Bool, 'robot_cmd_control_enabled', qos_profile=10)
+    robot_cmd_control_enabled_qos_profile = rclpy.qos.QoSProfile(depth=1)
+    robot_cmd_control_enabled_qos_profile.history=rclpy.qos.HistoryPolicy.KEEP_LAST
+    robot_cmd_control_enabled_qos_profile.durability = rclpy.qos.DurabilityPolicy.TRANSIENT_LOCAL
+    robot_cmd_control_enabled_qos_profile.reliability=rclpy.qos.ReliabilityPolicy.RELIABLE
+    self.robot_cmd_control_enabled_pub = self.create_publisher(Bool, 'robot_cmd_control_enabled', robot_cmd_control_enabled_qos_profile)
     # Robot motion enabled
-    self.robot_motion_enabled_pub = self.create_publisher(Bool, 'robot_motion_enabled', qos_profile=10)
+    robot_motion_enabled_qos_profile = rclpy.qos.QoSProfile(depth=1)
+    robot_motion_enabled_qos_profile.history=rclpy.qos.HistoryPolicy.KEEP_LAST
+    robot_motion_enabled_qos_profile.durability = rclpy.qos.DurabilityPolicy.TRANSIENT_LOCAL
+    robot_motion_enabled_qos_profile.reliability=rclpy.qos.ReliabilityPolicy.RELIABLE
+    self.robot_motion_enabled_pub = self.create_publisher(Bool, 'robot_motion_enabled', robot_motion_enabled_qos_profile)
 
 
     # Subscribers

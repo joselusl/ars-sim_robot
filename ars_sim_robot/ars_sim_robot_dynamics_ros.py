@@ -183,9 +183,17 @@ class ArsSimRobotDynamicsRos(Node):
     # Robot cmd stamped subscriber
     self.robot_vel_cmd_stamped_sub = self.create_subscription(TwistStamped, 'robot_cmd_stamped', self.robotVelCmdStampedCallback, qos_profile=10)
     # Robot cmd control enabled
-    self.robot_cmd_control_enabled_sub = self.create_subscription(Bool, 'robot_cmd_control_enabled', self.robotControlEnabledCallback, qos_profile=10)
+    robot_cmd_control_enabled_qos_profile = rclpy.qos.QoSProfile(depth=1)
+    robot_cmd_control_enabled_qos_profile.history=rclpy.qos.HistoryPolicy.KEEP_LAST
+    robot_cmd_control_enabled_qos_profile.durability = rclpy.qos.DurabilityPolicy.TRANSIENT_LOCAL
+    robot_cmd_control_enabled_qos_profile.reliability=rclpy.qos.ReliabilityPolicy.RELIABLE
+    self.robot_cmd_control_enabled_sub = self.create_subscription(Bool, 'robot_cmd_control_enabled', self.robotControlEnabledCallback, robot_cmd_control_enabled_qos_profile)
     # Robot motion enabled
-    self.robot_motion_enabled_sub = self.create_subscription(Bool, 'robot_motion_enabled', self.robotMotionEnabledCallback, qos_profile=10)
+    robot_motion_enabled_qos_profile = rclpy.qos.QoSProfile(depth=1)
+    robot_motion_enabled_qos_profile.history=rclpy.qos.HistoryPolicy.KEEP_LAST
+    robot_motion_enabled_qos_profile.durability = rclpy.qos.DurabilityPolicy.TRANSIENT_LOCAL
+    robot_motion_enabled_qos_profile.reliability=rclpy.qos.ReliabilityPolicy.RELIABLE
+    self.robot_motion_enabled_sub = self.create_subscription(Bool, 'robot_motion_enabled', self.robotMotionEnabledCallback, robot_motion_enabled_qos_profile)
 
 
     # Publishers
