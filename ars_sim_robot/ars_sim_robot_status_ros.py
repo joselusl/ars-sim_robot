@@ -107,10 +107,10 @@ class ArsSimRobotStatusRos(Node):
 
     # Init
     if(self.robot_init_status_flying is True):
-      print('Flying')
+      self.get_logger().info('Flying')
       self.setRobotFlying()
     else:
-      print('Landed')
+      self.get_logger().info('Landed')
       self.setRobotLanded()
 
 
@@ -204,21 +204,21 @@ class ArsSimRobotStatusRos(Node):
   def take_off(self):
 
     #
-    print("Take off command")
+    self.get_logger().info("Take off command")
 
     # Check
     if(self.robot_status == self.robot_status_types['TAKING_OFF']):
-      print("-Already taking off")
+      self.get_logger().info("-Already taking off")
       return False
     if(self.robot_status == self.robot_status_types['FLYING']):
-      print("-Already flying")
+      self.get_logger().info("-Already flying")
       return False
     if(self.robot_status != self.robot_status_types['LANDED'] and self.robot_status != self.robot_status_types['TAKING_OFF'] and self.robot_status != self.robot_status_types['FLYING']):
-      print("-Cannot take off")
+      self.get_logger().info("-Cannot take off")
       return False
 
     #
-    print("Taking off")
+    self.get_logger().info("Taking off")
 
     #
     self.setRobotTakingOff()
@@ -234,21 +234,21 @@ class ArsSimRobotStatusRos(Node):
   def land(self):
 
     #
-    print("Land command")
+    self.get_logger().info("Land command")
 
     # Check
     if(self.robot_status == self.robot_status_types['LANDING']):
-      print("-Already landing")
+      self.get_logger().info("-Already landing")
       return False
     if(self.robot_status == self.robot_status_types['LANDED']):
-      print("-Already landed")
+      self.get_logger().info("-Already landed")
       return False
     if(self.robot_status != self.robot_status_types['FLYING'] and self.robot_status != self.robot_status_types['LANDING'] and self.robot_status != self.robot_status_types['LANDED']):
-      print("-Cannot land")
+      self.get_logger().info("-Cannot land")
       return False
 
     #
-    print("Landing")
+    self.get_logger().info("Landing")
 
     #
     self.setRobotLanding()
@@ -267,11 +267,11 @@ class ArsSimRobotStatusRos(Node):
 
       # Check
       if(self.robot_status != self.robot_status_types['TAKING_OFF']):
-        print("Error taking off")
+        self.get_logger().info("Error taking off")
         return
 
       #
-      print("Flying")
+      self.get_logger().info("Flying")
 
       #
       self.setRobotFlying()
@@ -290,11 +290,11 @@ class ArsSimRobotStatusRos(Node):
 
       # Check
       if(self.robot_status != self.robot_status_types['LANDING']):
-        print("Error landing")
+        self.get_logger().info("Error landing")
         return
 
       #
-      print("Landed")
+      self.get_logger().info("Landed")
 
       # Change status
       self.setRobotLanded()

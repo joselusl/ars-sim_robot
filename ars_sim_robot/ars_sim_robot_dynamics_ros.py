@@ -117,9 +117,9 @@ class ArsSimRobotDynamicsRos(Node):
     # Package path
     try:
       pkg_path = get_package_share_directory('ars_sim_robot')
-      print(f"The path to the package is: {pkg_path}")
+      self.get_logger().info(f"The path to the package is: {pkg_path}")
     except ModuleNotFoundError:
-      print("Package not found")
+      self.get_logger().info("Package not found")
 
 
     
@@ -131,7 +131,7 @@ class ArsSimRobotDynamicsRos(Node):
     self.declare_parameter('robot_sim_description_yaml_file', default_robot_sim_description_yaml_file_name)
     # Get the parameter value
     robot_sim_description_yaml_file_name_str = self.get_parameter('robot_sim_description_yaml_file').get_parameter_value().string_value
-    print(robot_sim_description_yaml_file_name_str)
+    self.get_logger().info(robot_sim_description_yaml_file_name_str)
     # Store the absolute path
     self.robot_sim_description_yaml_file_name = os.path.abspath(robot_sim_description_yaml_file_name_str)
 
@@ -147,10 +147,10 @@ class ArsSimRobotDynamicsRos(Node):
         self.robot_sim_description = yaml.load(file, Loader=SafeLoader)['sim_robot']
 
     if(self.robot_sim_description is None):
-      print("Error loading robot dynamics sim description")
+      self.get_logger().info("Error loading robot dynamics sim description")
     else:
-      print("Robot sim description:")
-      print(self.robot_sim_description)
+      self.get_logger().info("Robot sim description:")
+      self.get_logger().info(str(self.robot_sim_description))
 
     # Set robot dynamics description param
     self.robot_dynamics.setRobotSimDescription(self.robot_sim_description)
