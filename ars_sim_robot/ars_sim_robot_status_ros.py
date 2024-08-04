@@ -18,8 +18,9 @@ class ArsSimRobotStatusRos(Node):
   # TAKING_OFF = 2
   # LANDING = 3
   # FLYING = 4
+  # COLLISION = 100
   robot_status = None
-  robot_status_types = {'UNKNOWN': 0, 'LANDED': 1, 'TAKING_OFF': 2, 'LANDING': 3, 'FLYING': 4}
+  robot_status_types = {'UNKNOWN': 0, 'LANDED': 1, 'TAKING_OFF': 2, 'LANDING': 3, 'FLYING': 4, 'COLLISION': 100}
 
   # Timers
   # secs
@@ -98,6 +99,8 @@ class ArsSimRobotStatusRos(Node):
     self.robot_takeoff_sub = self.create_subscription(Empty, "takeoff", self.takeoffCallback, qos_profile=10)
     #
     self.robot_land_sub = self.create_subscription(Empty, "land", self.landCallback, qos_profile=10)
+    #
+    self.collision_sub = self.create_subscription(Bool, "robot_collision", self.collisionCallback, qos_profile=10)
 
 
     # Timers
@@ -190,15 +193,51 @@ class ArsSimRobotStatusRos(Node):
     # Change status
     self.setRobotStatus(self.robot_status_types['TAKING_OFF'])
 
+    return
+
+
+  def setRobotCollision(self, isCollision=False):
+
+    if(isCollision and self.isRobotInCollision() == False):
+      # Disable controls (just in case)
+      robot_cmd_control_enabled = Bool()
+      robot_cmd_control_enabled.data = False
+      self.robot_cmd_control_enabled_pub.publish(robot_cmd_control_enabled)
+      # Disable Robot motion (just in case)
+      robot_motion_enabled = Bool()
+      robot_motion_enabled.data = False
+      self.robot_motion_enabled_pub.publish(robot_motion_enabled)
+      # Display
+      self.get_logger().info("Collision!!!")
+      # Change status
+      self.setRobotStatus(self.robot_status_types['COLLISION'])
+    #else:
+    #  # Do nothing
+
+
+    
+
+    return
+
 
   def setRobotStatus(self, robot_status_type):
 
     self.robot_status = robot_status_type
 
+    return
+
 
   def getRobotStatus(self):
 
     return self.robot_status
+
+
+  def isRobotInCollision(self):
+
+    if(self.robot_status == self.robot_status_types['COLLISION']):
+      return True
+    else:
+      return False
 
 
   def take_off(self):
@@ -207,6 +246,9 @@ class ArsSimRobotStatusRos(Node):
     self.get_logger().info("Take off command")
 
     # Check
+    if(self.isRobotInCollision()):
+      self.get_logger().info("-Robot in collision")
+      return False
     if(self.robot_status == self.robot_status_types['TAKING_OFF']):
       self.get_logger().info("-Already taking off")
       return False
@@ -237,6 +279,9 @@ class ArsSimRobotStatusRos(Node):
     self.get_logger().info("Land command")
 
     # Check
+    if(self.isRobotInCollision()):
+      self.get_logger().info("-Robot in collision")
+      return False
     if(self.robot_status == self.robot_status_types['LANDING']):
       self.get_logger().info("-Already landing")
       return False
@@ -318,6 +363,14 @@ class ArsSimRobotStatusRos(Node):
     self.land()
 
     return
+  
+
+  def collisionCallback(self, msg):
+
+    collision = msg.data
+    self.setRobotCollision(collision)
+
+    return
 
 
   def robotStatusTimerCallback(self):
@@ -336,6 +389,9 @@ class ArsSimRobotStatusRos(Node):
     elif(self.robot_status == self.robot_status_types['LANDING']):
       # Landing
       robot_status_msgs.robot_status = robot_status_msgs.LANDING
+    elif(self.robot_status == self.robot_status_types['COLLISION']):
+      # Collision
+      robot_status_msgs.robot_status = robot_status_msgs.COLLISION
     else:
       # Unknown
       robot_status_msgs.robot_status = robot_status_msgs.UNKNOWN
