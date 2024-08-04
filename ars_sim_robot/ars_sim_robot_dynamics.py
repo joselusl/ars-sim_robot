@@ -67,11 +67,11 @@ class ArsSimRobotDynamics:
   robot_atti_quat = None
 
   #
-  robot_velo_lin_world = None
+  robot_velo_lin_robot = None
   robot_velo_ang_robot = None
 
   #
-  robot_acce_lin_world = None
+  robot_acce_lin_robot = None
   robot_acce_ang_robot = None
 
   
@@ -141,10 +141,10 @@ class ArsSimRobotDynamics:
     self.robot_posi = np.zeros((3,), dtype=float)
     self.robot_atti_quat = ars_lib_helpers.Quaternion.zerosQuat()
 
-    self.robot_velo_lin_world = np.zeros((3,), dtype=float)
+    self.robot_velo_lin_robot = np.zeros((3,), dtype=float)
     self.robot_velo_ang_robot = np.zeros((3,), dtype=float)
 
-    self.robot_acce_lin_world = np.zeros((3,), dtype=float)
+    self.robot_acce_lin_robot = np.zeros((3,), dtype=float)
     self.robot_acce_ang_robot = np.zeros((3,), dtype=float)
 
     #
@@ -249,11 +249,11 @@ class ArsSimRobotDynamics:
 
 
   def getRobotVeloLinWorld(self):
-    return self.robot_velo_lin_world
+    return ars_lib_helpers.Conversions.convertVelLinFromRobotToWorld(self.robot_velo_lin_robot, self.robot_atti_quat, False)
 
 
   def getRobotVeloLinRobot(self):
-    return ars_lib_helpers.Conversions.convertVelLinFromWorldToRobot(self.robot_velo_lin_world, self.robot_atti_quat, False)
+    return self.robot_velo_lin_robot
 
 
   def getRobotVeloAngRobot(self):
@@ -265,11 +265,11 @@ class ArsSimRobotDynamics:
 
 
   def getRobotAcceLinWorld(self):
-    return self.robot_acce_lin_world
+    return ars_lib_helpers.Conversions.convertVelLinFromRobotToWorld(self.robot_acce_lin_robot, self.robot_atti_quat, False)
 
 
   def getRobotAcceLinRobot(self):
-    return ars_lib_helpers.Conversions.convertVelLinFromWorldToRobot(self.robot_acce_lin_world, self.robot_atti_quat, False)
+    return self.robot_acce_lin_robot
 
 
   def getRobotAcceAngRobot(self):
@@ -293,15 +293,7 @@ class ArsSimRobotDynamics:
     robot_atti_quat_simp = ars_lib_helpers.Quaternion.getSimplifiedQuatRobotAtti(self.robot_atti_quat)
 
     #
-    robot_velo_lin_cmd_ef_world = ars_lib_helpers.Conversions.convertVelLinFromRobotToWorld(self.robot_velo_lin_cmd_ef_robot, self.robot_atti_quat, False)
-    robot_velo_ang_cmd_ef_world = ars_lib_helpers.Conversions.convertVelAngFromRobotToWorld(self.robot_velo_ang_cmd_ef_robot, self.robot_atti_quat, False)
-
-    #
-    robot_velo_lin_robot = ars_lib_helpers.Conversions.convertVelLinFromWorldToRobot(self.robot_velo_lin_world, self.robot_atti_quat, False)
-
-    #
-    robot_acce_lin_robot = ars_lib_helpers.Conversions.convertVelLinFromWorldToRobot(self.robot_acce_lin_world, self.robot_atti_quat, False)
-
+    robot_velo_lin_world = ars_lib_helpers.Conversions.convertVelLinFromRobotToWorld(self.robot_velo_lin_robot, self.robot_atti_quat, False)
 
 
     #
@@ -323,8 +315,8 @@ class ArsSimRobotDynamics:
       self.robot_velo_ang_cmd_ef_robot = np.zeros((3,), dtype=float)
       #
       self.robot_posi = self.robot_posi
-      self.robot_velo_lin_world = np.zeros((3,), dtype=float)
-      self.robot_acce_lin_world = np.zeros((3,), dtype=float)
+      self.robot_velo_lin_robot = np.zeros((3,), dtype=float)
+      self.robot_acce_lin_robot = np.zeros((3,), dtype=float)
       #
       self.robot_atti_quat = self.robot_atti_quat
       self.robot_velo_ang_robot = np.zeros((3,), dtype=float)
@@ -332,6 +324,8 @@ class ArsSimRobotDynamics:
 
 
     else:
+
+      ## Control Comd
 
       # Control command - Linear
       new_robot_velo_lin_cmd_ef_robot = np.zeros((3,), dtype=float)
@@ -344,26 +338,29 @@ class ArsSimRobotDynamics:
       new_robot_velo_ang_cmd_ef_robot[2] = self.robot_velo_ang_cmd_ef_robot[2] * (1.0 - delta_time/self.robot_dyn_const_cmd['u_phi']['T']) + delta_time/self.robot_dyn_const_cmd['u_phi']['T']*self.robot_dyn_const_cmd['u_phi']['k']*self.robot_velo_ang_cmd_in[2]
 
 
-      # Position
-      new_robot_posi = np.zeros((3,), dtype=float)
-      new_robot_posi[0] = self.robot_posi[0] + delta_time * self.robot_velo_lin_world[0]
-      new_robot_posi[1] = self.robot_posi[1] + delta_time * self.robot_velo_lin_world[1]
-      new_robot_posi[2] = self.robot_posi[2] + delta_time * self.robot_velo_lin_world[2]
+      ## State:linear
 
       # Accel lin
-      new_robot_acce_lin_world = np.zeros((3,), dtype=float)
-      new_robot_acce_lin_world[0] = 1/self.robot_dyn_const_lin['vx']['T']*(-self.robot_velo_lin_world[0]+self.robot_dyn_const_lin['vx']['k']*robot_velo_lin_cmd_ef_world[0])
-      new_robot_acce_lin_world[1] = 1/self.robot_dyn_const_lin['vy']['T']*(-self.robot_velo_lin_world[1]+self.robot_dyn_const_lin['vy']['k']*robot_velo_lin_cmd_ef_world[1])
-      new_robot_acce_lin_world[2] = 1/self.robot_dyn_const_lin['vz']['T']*(-self.robot_velo_lin_world[2]+self.robot_dyn_const_lin['vz']['k']*robot_velo_lin_cmd_ef_world[2])
+      new_robot_acce_lin_robot = np.zeros((3,), dtype=float)
+      new_robot_acce_lin_robot[0] = 1/self.robot_dyn_const_lin['vx']['T']*(-self.robot_velo_lin_robot[0]+self.robot_dyn_const_lin['vx']['k']*self.robot_velo_lin_cmd_ef_robot[0])
+      new_robot_acce_lin_robot[1] = 1/self.robot_dyn_const_lin['vy']['T']*(-self.robot_velo_lin_robot[1]+self.robot_dyn_const_lin['vy']['k']*self.robot_velo_lin_cmd_ef_robot[1])
+      new_robot_acce_lin_robot[2] = 1/self.robot_dyn_const_lin['vz']['T']*(-self.robot_velo_lin_robot[2]+self.robot_dyn_const_lin['vz']['k']*self.robot_velo_lin_cmd_ef_robot[2])
 
       # Velo lin
-      new_robot_velo_lin_world = np.zeros((3,), dtype=float)
-      new_robot_velo_lin_world[0] = self.robot_velo_lin_world[0] + delta_time * self.robot_acce_lin_world[0]
-      new_robot_velo_lin_world[1] = self.robot_velo_lin_world[1] + delta_time * self.robot_acce_lin_world[1]
-      new_robot_velo_lin_world[2] = self.robot_velo_lin_world[2] + delta_time * self.robot_acce_lin_world[2]
+      new_robot_velo_lin_robot = np.zeros((3,), dtype=float)
+      new_robot_velo_lin_robot[0] = self.robot_velo_lin_robot[0] + delta_time * self.robot_acce_lin_robot[0]
+      new_robot_velo_lin_robot[1] = self.robot_velo_lin_robot[1] + delta_time * self.robot_acce_lin_robot[1]
+      new_robot_velo_lin_robot[2] = self.robot_velo_lin_robot[2] + delta_time * self.robot_acce_lin_robot[2]
+
+      # Position
+      new_robot_posi = np.zeros((3,), dtype=float)
+      new_robot_posi[0] = self.robot_posi[0] + delta_time * robot_velo_lin_world[0]
+      new_robot_posi[1] = self.robot_posi[1] + delta_time * robot_velo_lin_world[1]
+      new_robot_posi[2] = self.robot_posi[2] + delta_time * robot_velo_lin_world[2]
 
 
-      # Orientation
+
+      ## State: Orientation
       
       #
       delta_rho = delta_time*self.robot_velo_ang_robot[2]
@@ -388,9 +385,9 @@ class ArsSimRobotDynamics:
         sign_robot_velo_lin_z_robot=self.computeSign(self.robot_velo_lin_robot[2])
 
         #
-        thrust_specific_lin_x = robot_acce_lin_robot[0]+sign_robot_velo_lin_x_robot*1.0/self.mass_quadrotor*self.aerodynamics_coef['x']*robot_velo_lin_robot[0]*robot_velo_lin_robot[0]
-        thrust_specific_lin_y = robot_acce_lin_robot[1]+sign_robot_velo_lin_y_robot*1.0/self.mass_quadrotor*self.aerodynamics_coef['y']*robot_velo_lin_robot[1]*robot_velo_lin_robot[1]
-        thrust_specific_lin_z = robot_acce_lin_robot[2]+self.gravity+sign_robot_velo_lin_z_robot*1.0/self.mass_quadrotor*self.aerodynamics_coef['z']*robot_velo_lin_robot[2]*robot_velo_lin_robot[2]
+        thrust_specific_lin_x = self.robot_acce_lin_robot[0]+sign_robot_velo_lin_x_robot*1.0/self.mass_quadrotor*self.aerodynamics_coef['x']*self.robot_velo_lin_robot[0]*self.robot_velo_lin_robot[0]
+        thrust_specific_lin_y = self.robot_acce_lin_robot[1]+sign_robot_velo_lin_y_robot*1.0/self.mass_quadrotor*self.aerodynamics_coef['y']*self.robot_velo_lin_robot[1]*self.robot_velo_lin_robot[1]
+        thrust_specific_lin_z = self.robot_acce_lin_robot[2]+self.gravity+sign_robot_velo_lin_z_robot*1.0/self.mass_quadrotor*self.aerodynamics_coef['z']*self.robot_velo_lin_robot[2]*self.robot_velo_lin_robot[2]
 
         #
         new_robot_atti_ang_pitch =  np.math.atan2( thrust_specific_lin_x , thrust_specific_lin_z )
@@ -411,7 +408,8 @@ class ArsSimRobotDynamics:
 
       # Accel ang
       new_robot_acce_ang_robot = np.zeros((3,), dtype=float)
-      new_robot_acce_ang_robot[2] = 1/self.robot_dyn_const_ang['wz']['T']*(-self.robot_velo_ang_robot[2]+self.robot_dyn_const_ang['wz']['k']*robot_velo_ang_cmd_ef_world[2])
+      new_robot_acce_ang_robot[2] = 1/self.robot_dyn_const_ang['wz']['T']*(-self.robot_velo_ang_robot[2]+self.robot_dyn_const_ang['wz']['k']*self.robot_velo_ang_cmd_ef_robot[2])
+
 
 
       # Velo ang
@@ -419,14 +417,15 @@ class ArsSimRobotDynamics:
       new_robot_velo_ang_robot[2] = self.robot_velo_ang_robot[2] + delta_time * self.robot_acce_ang_robot[2]
 
 
-      # Update state
+
+      ## Update state
       #
       self.robot_velo_lin_cmd_ef_robot = new_robot_velo_lin_cmd_ef_robot
       self.robot_velo_ang_cmd_ef_robot = new_robot_velo_ang_cmd_ef_robot
       #
       self.robot_posi = new_robot_posi
-      self.robot_velo_lin_world = new_robot_velo_lin_world
-      self.robot_acce_lin_world = new_robot_acce_lin_world
+      self.robot_velo_lin_robot = new_robot_velo_lin_robot
+      self.robot_acce_lin_robot = new_robot_acce_lin_robot
       #
       self.robot_atti_quat = new_robot_atti_quat
       self.robot_velo_ang_robot = new_robot_velo_ang_robot
