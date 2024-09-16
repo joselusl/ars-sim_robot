@@ -125,7 +125,7 @@ class ArsSimRobotDynamics:
 
 
     #
-    self.time_stamp_ros = Time(seconds=0, nanoseconds=0)
+    self.time_stamp_ros = Time()
 
     #
     self.flag_cmd_control_enabled = True
